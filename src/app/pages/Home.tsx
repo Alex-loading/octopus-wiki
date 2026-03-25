@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { motion, useScroll, useTransform, AnimatePresence } from "motion/react";
 import { ArrowRight, Sparkles, Rss } from "lucide-react";
-import { posts } from "../data/posts";
+import { listArticles } from "../content/repository";
+import type { Post } from "../data/posts";
 import { demos } from "../data/demos";
 import { PostCard } from "../components/PostCard";
 
@@ -55,10 +56,24 @@ function TypewriterTagline({ dm }: { dm: boolean }) {
 
 export function Home({ darkMode }: HomeProps) {
   const dm = darkMode;
+  const [posts, setPosts] = useState<Post[]>([]);
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 80]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    listArticles().then((items) => {
+      if (cancelled) return;
+      setPosts(items);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const featuredPosts = posts.filter((p) => p.featured);
   const recentPosts = posts.slice(0, 5);

@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, X, ArrowRight, Clock, Tag } from "lucide-react";
-import { posts } from "../data/posts";
+import { listArticles } from "../content/repository";
+import type { Post } from "../data/posts";
 
 interface SearchModalProps {
   open: boolean;
@@ -11,18 +12,32 @@ interface SearchModalProps {
 }
 
 export function SearchModal({ open, onClose, darkMode }: SearchModalProps) {
+  const [posts, setPosts] = useState<Post[]>([]);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = query.trim()
     ? posts.filter(
-        (p) =>
-          p.title.toLowerCase().includes(query.toLowerCase()) ||
-          p.excerpt.toLowerCase().includes(query.toLowerCase()) ||
-          p.tags.some((t) => t.toLowerCase().includes(query.toLowerCase())) ||
-          p.category.toLowerCase().includes(query.toLowerCase())
-      )
+      (p) =>
+        p.title.toLowerCase().includes(query.toLowerCase()) ||
+        p.excerpt.toLowerCase().includes(query.toLowerCase()) ||
+        p.tags.some((t) => t.toLowerCase().includes(query.toLowerCase())) ||
+        p.category.toLowerCase().includes(query.toLowerCase())
+    )
     : [];
+
+  useEffect(() => {
+    let cancelled = false;
+
+    listArticles().then((items) => {
+      if (cancelled) return;
+      setPosts(items);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -63,9 +78,8 @@ export function SearchModal({ open, onClose, darkMode }: SearchModalProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -20 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className={`w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl ${
-                dm ? "bg-gray-900 border border-white/10" : "bg-white border border-gray-200"
-              }`}
+              className={`w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl ${dm ? "bg-gray-900 border border-white/10" : "bg-white border border-gray-200"
+                }`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Search input */}
@@ -76,9 +90,8 @@ export function SearchModal({ open, onClose, darkMode }: SearchModalProps) {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="搜索文章、标签、分类..."
-                  className={`flex-1 py-4 bg-transparent outline-none placeholder:text-gray-400 ${
-                    dm ? "text-white" : "text-gray-900"
-                  }`}
+                  className={`flex-1 py-4 bg-transparent outline-none placeholder:text-gray-400 ${dm ? "text-white" : "text-gray-900"
+                    }`}
                 />
                 {query && (
                   <motion.button
@@ -124,9 +137,8 @@ export function SearchModal({ open, onClose, darkMode }: SearchModalProps) {
                     <Link
                       to={`/post/${post.slug}`}
                       onClick={onClose}
-                      className={`flex items-start gap-3 px-4 py-3 transition-colors group ${
-                        dm ? "hover:bg-white/5" : "hover:bg-gray-50"
-                      }`}
+                      className={`flex items-start gap-3 px-4 py-3 transition-colors group ${dm ? "hover:bg-white/5" : "hover:bg-gray-50"
+                        }`}
                     >
                       <img
                         src={post.coverImage}

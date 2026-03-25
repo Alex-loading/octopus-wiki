@@ -10,6 +10,7 @@ export interface Post {
   date: string;
   readTime: number;
   featured?: boolean;
+  status?: "draft" | "published";
 }
 
 export const posts: Post[] = [

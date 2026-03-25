@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, SlidersHorizontal, X, LayoutGrid, List } from "lucide-react";
-import { posts, allTags, allCategories } from "../data/posts";
+import { listArticles } from "../content/repository";
+import type { Post } from "../data/posts";
 import { PostCard } from "../components/PostCard";
 
 interface BlogProps {
@@ -11,11 +12,33 @@ interface BlogProps {
 
 export function Blog({ darkMode, onSearchOpen }: BlogProps) {
   const dm = darkMode;
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+
+  useEffect(() => {
+    let mounted = true;
+    listArticles()
+      .then((items) => {
+        if (!mounted) return;
+        setPosts(items);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const allTags = useMemo(() => Array.from(new Set(posts.flatMap((p) => p.tags))), [posts]);
+  const allCategories = useMemo(() => Array.from(new Set(posts.map((p) => p.category))), [posts]);
 
   const filtered = useMemo(() => {
     return posts.filter((post) => {
@@ -75,11 +98,10 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
           transition={{ delay: 0.1 }}
           className="flex gap-3 mb-6"
         >
-          <div className={`flex-1 flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all ${
-            dm
+          <div className={`flex-1 flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all ${dm
               ? "bg-gray-900 border-white/5 focus-within:border-indigo-500/50"
               : "bg-gray-50 border-gray-200 focus-within:border-indigo-300"
-          }`}>
+            }`}>
             <Search size={16} className={dm ? "text-gray-500" : "text-gray-400"} />
             <input
               value={searchQuery}
@@ -98,15 +120,14 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-              showFilters || hasFilters
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${showFilters || hasFilters
                 ? dm
                   ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-400"
                   : "bg-indigo-50 border-indigo-200 text-indigo-600"
                 : dm
-                ? "bg-gray-900 border-white/5 text-gray-400 hover:border-white/10"
-                : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300"
-            }`}
+                  ? "bg-gray-900 border-white/5 text-gray-400 hover:border-white/10"
+                  : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300"
+              }`}
           >
             <SlidersHorizontal size={15} />
             筛选
@@ -122,11 +143,10 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`p-2 rounded-lg transition-all ${
-                  viewMode === mode
+                className={`p-2 rounded-lg transition-all ${viewMode === mode
                     ? dm ? "bg-white/10 text-white" : "bg-white text-gray-900 shadow-sm"
                     : dm ? "text-gray-600 hover:text-gray-400" : "text-gray-400 hover:text-gray-600"
-                }`}
+                  }`}
               >
                 {mode === "list" ? <List size={15} /> : <LayoutGrid size={15} />}
               </button>
@@ -154,11 +174,10 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
                         key={cat}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
-                        className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
-                          selectedCategory === cat
+                        className={`px-3 py-1.5 rounded-lg text-sm transition-all ${selectedCategory === cat
                             ? dm ? "bg-indigo-500 text-white" : "bg-indigo-600 text-white"
                             : dm ? "bg-white/5 text-gray-400 hover:bg-white/10" : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
-                        }`}
+                          }`}
                       >
                         {cat}
                       </motion.button>
@@ -175,11 +194,10 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
                         key={tag}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => toggleTag(tag)}
-                        className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
-                          selectedTags.includes(tag)
+                        className={`px-3 py-1.5 rounded-lg text-sm transition-all ${selectedTags.includes(tag)
                             ? dm ? "bg-violet-500/30 text-violet-300 border border-violet-500/30" : "bg-violet-50 text-violet-700 border border-violet-200"
                             : dm ? "bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent" : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
-                        }`}
+                          }`}
                       >
                         # {tag}
                       </motion.button>
@@ -211,11 +229,10 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
         >
           <button
             onClick={() => setSelectedCategory(null)}
-            className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-              !selectedCategory
+            className={`px-3 py-1.5 rounded-full text-sm transition-all ${!selectedCategory
                 ? dm ? "bg-white text-gray-900" : "bg-gray-900 text-white"
                 : dm ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-700"
-            }`}
+              }`}
           >
             全部
           </button>
@@ -223,11 +240,10 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
             <button
               key={cat}
               onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
-              className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                selectedCategory === cat
+              className={`px-3 py-1.5 rounded-full text-sm transition-all ${selectedCategory === cat
                   ? dm ? "bg-indigo-500 text-white" : "bg-indigo-600 text-white"
                   : dm ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-700"
-              }`}
+                }`}
             >
               {cat}
             </button>
@@ -235,47 +251,53 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
         </motion.div>
 
         {/* Results */}
-        <AnimatePresence mode="wait">
-          {filtered.length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className={`text-center py-20 ${dm ? "text-gray-500" : "text-gray-400"}`}
-            >
-              <Search size={40} className="mx-auto mb-4 opacity-30" />
-              <p>没有找到匹配的文章</p>
-              <button onClick={clearFilters} className={`mt-4 text-sm underline ${dm ? "text-indigo-400" : "text-indigo-600"}`}>
-                清除筛选
-              </button>
-            </motion.div>
-          ) : viewMode === "list" ? (
-            <motion.div
-              key="list"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="space-y-4"
-            >
-              {filtered.map((post, i) => (
-                <PostCard key={post.id} post={post} darkMode={dm} index={i} variant="default" />
-              ))}
-            </motion.div>
-          ) : (
-            <motion.div
-              key="grid"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-5"
-            >
-              {filtered.map((post, i) => (
-                <PostCard key={post.id} post={post} darkMode={dm} index={i} variant="featured" />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {loading ? (
+          <div className={`py-20 text-center ${dm ? "text-gray-500" : "text-gray-400"}`}>
+            正在加载文章...
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            {filtered.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className={`text-center py-20 ${dm ? "text-gray-500" : "text-gray-400"}`}
+              >
+                <Search size={40} className="mx-auto mb-4 opacity-30" />
+                <p>没有找到匹配的文章</p>
+                <button onClick={clearFilters} className={`mt-4 text-sm underline ${dm ? "text-indigo-400" : "text-indigo-600"}`}>
+                  清除筛选
+                </button>
+              </motion.div>
+            ) : viewMode === "list" ? (
+              <motion.div
+                key="list"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="space-y-4"
+              >
+                {filtered.map((post, i) => (
+                  <PostCard key={post.id} post={post} darkMode={dm} index={i} variant="default" />
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="grid"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-5"
+              >
+                {filtered.map((post, i) => (
+                  <PostCard key={post.id} post={post} darkMode={dm} index={i} variant="featured" />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
       </div>
     </div>
   );

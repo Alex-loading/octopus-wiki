@@ -8,6 +8,8 @@ import { Blog } from "./pages/Blog";
 import { Post } from "./pages/Post";
 import { About } from "./pages/About";
 import { Lab } from "./pages/Lab";
+import { AdminArticles } from "./pages/AdminArticles";
+import { AdminLogin } from "./pages/AdminLogin";
 import { useBlog } from "./context/BlogContext";
 
 function PageContent() {
@@ -20,6 +22,8 @@ function PageContent() {
   if (path.startsWith("/post/")) return <Post darkMode={darkMode} />;
   if (path === "/about") return <About darkMode={darkMode} />;
   if (path === "/lab") return <Lab darkMode={darkMode} />;
+  if (path === "/admin/login") return <AdminLogin darkMode={darkMode} />;
+  if (path === "/admin/articles") return <AdminArticles darkMode={darkMode} />;
   return (
     <div className={`min-h-screen flex items-center justify-center pt-24 ${darkMode ? "bg-gray-950 text-white" : "bg-white text-gray-900"}`}>
       <div className="text-center">

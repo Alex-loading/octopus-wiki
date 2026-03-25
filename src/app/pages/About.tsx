@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Mail, Github, Twitter, ExternalLink, BookOpen, Code2, Camera, Coffee, Rss, ArrowRight } from "lucide-react";
 import { Link } from "react-router";
-import { posts } from "../data/posts";
+import { listArticles } from "../content/repository";
+import type { Post } from "../data/posts";
 
 interface AboutProps {
   darkMode: boolean;
@@ -35,7 +36,21 @@ export function About({ darkMode }: AboutProps) {
   const dm = darkMode;
   const [hoveredSkill, setHoveredSkill] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"about" | "work" | "contact">("about");
+  const [posts, setPosts] = useState<Post[]>([]);
   const recentPosts = posts.slice(0, 3);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    listArticles().then((items) => {
+      if (cancelled) return;
+      setPosts(items);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className={`min-h-screen pt-24 pb-20 ${dm ? "bg-gray-950" : "bg-white"}`}>
@@ -69,9 +84,8 @@ export function About({ darkMode }: AboutProps) {
                 href="mailto:hello@chenmo.dev"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium ${
-                  dm ? "bg-white text-gray-900 hover:bg-gray-100" : "bg-gray-900 text-white hover:bg-gray-800"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium ${dm ? "bg-white text-gray-900 hover:bg-gray-100" : "bg-gray-900 text-white hover:bg-gray-800"
+                  }`}
               >
                 <Mail size={14} />
                 发送邮件
@@ -87,9 +101,8 @@ export function About({ darkMode }: AboutProps) {
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                   title={label}
-                  className={`p-2.5 rounded-xl border transition-colors ${
-                    dm ? "border-white/10 text-gray-400 hover:text-white hover:border-white/20" : "border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300"
-                  }`}
+                  className={`p-2.5 rounded-xl border transition-colors ${dm ? "border-white/10 text-gray-400 hover:text-white hover:border-white/20" : "border-gray-200 text-gray-500 hover:text-gray-900 hover:border-gray-300"
+                    }`}
                 >
                   <Icon size={16} />
                 </motion.a>
@@ -124,9 +137,8 @@ export function About({ darkMode }: AboutProps) {
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.4 + i * 0.1, type: "spring", stiffness: 300 }}
-                    className={`absolute ${positions[i]} flex items-center gap-2 px-3 py-2 rounded-xl text-sm backdrop-blur-sm border ${
-                      dm ? "bg-gray-900/90 border-white/10 text-white" : "bg-white/90 border-gray-200 text-gray-900 shadow-sm"
-                    }`}
+                    className={`absolute ${positions[i]} flex items-center gap-2 px-3 py-2 rounded-xl text-sm backdrop-blur-sm border ${dm ? "bg-gray-900/90 border-white/10 text-white" : "bg-white/90 border-gray-200 text-gray-900 shadow-sm"
+                      }`}
                   >
                     <item.icon size={14} className={dm ? "text-indigo-400" : "text-indigo-600"} />
                     {item.label}
@@ -145,11 +157,10 @@ export function About({ darkMode }: AboutProps) {
               <motion.button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === tab
+                className={`relative px-5 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab
                     ? dm ? "text-white" : "text-gray-900"
                     : dm ? "text-gray-500 hover:text-gray-300" : "text-gray-500 hover:text-gray-700"
-                }`}
+                  }`}
               >
                 {activeTab === tab && (
                   <motion.div
@@ -201,11 +212,10 @@ export function About({ darkMode }: AboutProps) {
                           initial={{ width: 0 }}
                           animate={{ width: `${skill.level}%` }}
                           transition={{ duration: 0.8, delay: 0.3 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-                          className={`h-full rounded-full ${
-                            hoveredSkill === skill.name
+                          className={`h-full rounded-full ${hoveredSkill === skill.name
                               ? "bg-indigo-500"
                               : dm ? "bg-white/30" : "bg-gray-400"
-                          } transition-colors`}
+                            } transition-colors`}
                         />
                       </div>
                     </motion.div>
@@ -226,9 +236,8 @@ export function About({ darkMode }: AboutProps) {
                     >
                       <Link
                         to={`/post/${post.slug}`}
-                        className={`flex items-start gap-3 p-3 rounded-xl transition-colors group ${
-                          dm ? "hover:bg-white/5" : "hover:bg-gray-50"
-                        }`}
+                        className={`flex items-start gap-3 p-3 rounded-xl transition-colors group ${dm ? "hover:bg-white/5" : "hover:bg-gray-50"
+                          }`}
                       >
                         <img src={post.coverImage} alt={post.title} className="w-12 h-10 object-cover rounded-lg shrink-0" />
                         <div>
@@ -323,9 +332,8 @@ export function About({ darkMode }: AboutProps) {
                     <a
                       key={item.label}
                       href="#"
-                      className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-sm transition-all group ${
-                        dm ? "border-white/5 hover:border-white/15 text-gray-400 hover:text-white" : "border-gray-200 hover:border-gray-300 text-gray-600 hover:text-gray-900"
-                      }`}
+                      className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-sm transition-all group ${dm ? "border-white/5 hover:border-white/15 text-gray-400 hover:text-white" : "border-gray-200 hover:border-gray-300 text-gray-600 hover:text-gray-900"
+                        }`}
                     >
                       <item.icon size={14} />
                       <span>{item.value}</span>
@@ -372,11 +380,10 @@ function ContactForm({ dm }: { dm: boolean }) {
     );
   }
 
-  const inputClass = `w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
-    dm
+  const inputClass = `w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${dm
       ? "bg-gray-900 border-white/5 text-white placeholder:text-gray-600 focus:border-indigo-500/50"
       : "bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-indigo-300 focus:bg-white"
-  }`;
+    }`;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -415,9 +422,8 @@ function ContactForm({ dm }: { dm: boolean }) {
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.97 }}
         type="submit"
-        className={`w-full py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 ${
-          dm ? "bg-indigo-500 hover:bg-indigo-400 text-white" : "bg-indigo-600 hover:bg-indigo-700 text-white"
-        }`}
+        className={`w-full py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 ${dm ? "bg-indigo-500 hover:bg-indigo-400 text-white" : "bg-indigo-600 hover:bg-indigo-700 text-white"
+          }`}
       >
         <Mail size={14} />
         发送消息

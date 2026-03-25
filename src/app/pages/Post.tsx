@@ -13,7 +13,8 @@ import {
   Tag,
   List,
 } from "lucide-react";
-import { posts } from "../data/posts";
+import { getArticleBySlug, listArticles } from "../content/repository";
+import type { Post as PostItem } from "../data/posts";
 
 interface PostProps {
   darkMode: boolean;
@@ -79,9 +80,8 @@ function MarkdownRenderer({
         <h2
           key={idx}
           id={id}
-          className={`text-xl font-medium mt-10 mb-4 scroll-mt-28 ${
-            dm ? "text-white" : "text-gray-900"
-          }`}
+          className={`text-xl font-medium mt-10 mb-4 scroll-mt-28 ${dm ? "text-white" : "text-gray-900"
+            }`}
         >
           {text}
         </h2>
@@ -95,9 +95,8 @@ function MarkdownRenderer({
         <h3
           key={idx}
           id={id}
-          className={`text-base font-medium mt-6 mb-3 scroll-mt-28 ${
-            dm ? "text-white" : "text-gray-900"
-          }`}
+          className={`text-base font-medium mt-6 mb-3 scroll-mt-28 ${dm ? "text-white" : "text-gray-900"
+            }`}
         >
           {text}
         </h3>
@@ -120,23 +119,20 @@ function MarkdownRenderer({
     return (
       <p
         key={idx}
-        className={`my-3 leading-relaxed ${
-          dm ? "text-gray-300" : "text-gray-600"
-        }`}
+        className={`my-3 leading-relaxed ${dm ? "text-gray-300" : "text-gray-600"
+          }`}
         dangerouslySetInnerHTML={{
           __html: line
             .replace(
               /\*\*(.*?)\*\*/g,
-              `<strong class="${
-                dm ? "text-white" : "text-gray-900"
+              `<strong class="${dm ? "text-white" : "text-gray-900"
               } font-medium">$1</strong>`
             )
             .replace(
               /`(.*?)`/g,
-              `<code class="px-1.5 py-0.5 rounded text-sm font-mono ${
-                dm
-                  ? "bg-white/10 text-indigo-300"
-                  : "bg-gray-100 text-indigo-700"
+              `<code class="px-1.5 py-0.5 rounded text-sm font-mono ${dm
+                ? "bg-white/10 text-indigo-300"
+                : "bg-gray-100 text-indigo-700"
               }">$1</code>`
             ),
         }}
@@ -163,9 +159,8 @@ function TableOfContents({
   return (
     <nav className="space-y-1">
       <p
-        className={`text-xs font-medium mb-3 flex items-center gap-1.5 ${
-          dm ? "text-gray-500" : "text-gray-400"
-        }`}
+        className={`text-xs font-medium mb-3 flex items-center gap-1.5 ${dm ? "text-gray-500" : "text-gray-400"
+          }`}
       >
         <List size={12} />
         目录
@@ -182,22 +177,19 @@ function TableOfContents({
             });
             onItemClick?.();
           }}
-          className={`block text-xs leading-relaxed transition-all duration-200 ${
-            h.level === 3 ? "pl-3" : ""
-          } ${
-            activeId === h.id
+          className={`block text-xs leading-relaxed transition-all duration-200 ${h.level === 3 ? "pl-3" : ""
+            } ${activeId === h.id
               ? dm
                 ? "text-indigo-400 font-medium"
                 : "text-indigo-600 font-medium"
               : dm
-              ? "text-gray-600 hover:text-gray-300"
-              : "text-gray-400 hover:text-gray-700"
-          }`}
+                ? "text-gray-600 hover:text-gray-300"
+                : "text-gray-400 hover:text-gray-700"
+            }`}
         >
           <span
-            className={`inline-block transition-all duration-200 ${
-              activeId === h.id ? "translate-x-1" : ""
-            }`}
+            className={`inline-block transition-all duration-200 ${activeId === h.id ? "translate-x-1" : ""
+              }`}
           >
             {h.text}
           </span>
@@ -221,15 +213,20 @@ export function Post({ darkMode }: PostProps) {
   const [copied, setCopied] = useState(false);
   const [activeHeadingId, setActiveHeadingId] = useState("");
   const [showToc, setShowToc] = useState(false);
+  const [post, setPost] = useState<PostItem | null>(null);
+  const [allArticles, setAllArticles] = useState<PostItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
 
-  const post = posts.find((p) => p.slug === slug);
-  const relatedPosts = posts
-    .filter((p) => p.id !== post?.id && p.category === post?.category)
-    .slice(0, 2);
+  const relatedPosts = useMemo(() => {
+    if (!post) return [];
+    return allArticles
+      .filter((item) => item.id !== post.id && item.category === post.category)
+      .slice(0, 2);
+  }, [allArticles, post]);
 
   // Extract headings from content
   const headings: Heading[] = useMemo(() => {
@@ -273,6 +270,26 @@ export function Post({ darkMode }: PostProps) {
     window.scrollTo(0, 0);
   }, [slug]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    setLoading(true);
+    Promise.all([getArticleBySlug(slug), listArticles()])
+      .then(([detail, list]) => {
+        if (cancelled) return;
+        setPost(detail);
+        setAllArticles(list);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
@@ -295,20 +312,29 @@ export function Post({ darkMode }: PostProps) {
     setComment("");
   };
 
+  if (loading) {
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center ${dm ? "bg-gray-950 text-gray-300" : "bg-white text-gray-500"
+          }`}
+      >
+        正在加载文章...
+      </div>
+    );
+  }
+
   if (!post) {
     return (
       <div
-        className={`min-h-screen flex items-center justify-center ${
-          dm ? "bg-gray-950 text-white" : "bg-white text-gray-900"
-        }`}
+        className={`min-h-screen flex items-center justify-center ${dm ? "bg-gray-950 text-white" : "bg-white text-gray-900"
+          }`}
       >
         <div className="text-center">
           <p className="text-lg mb-4">文章不存在</p>
           <Link
             to="/blog"
-            className={`text-sm ${
-              dm ? "text-indigo-400" : "text-indigo-600"
-            } underline`}
+            className={`text-sm ${dm ? "text-indigo-400" : "text-indigo-600"
+              } underline`}
           >
             返回列表
           </Link>
@@ -334,11 +360,10 @@ export function Post({ darkMode }: PostProps) {
           whileHover={{ scale: 1.05, x: -2 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => navigate(-1)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm backdrop-blur-sm transition-colors ${
-            dm
+          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm backdrop-blur-sm transition-colors ${dm
               ? "bg-gray-900/80 border border-white/10 text-gray-400 hover:text-white"
               : "bg-white/80 border border-gray-200 text-gray-500 hover:text-gray-900 shadow-sm"
-          }`}
+            }`}
         >
           <ArrowLeft size={14} />
           返回
@@ -355,15 +380,14 @@ export function Post({ darkMode }: PostProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowToc(!showToc)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm backdrop-blur-sm transition-colors ${
-              showToc
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm backdrop-blur-sm transition-colors ${showToc
                 ? dm
                   ? "bg-indigo-500/20 border border-indigo-500/30 text-indigo-400"
                   : "bg-indigo-50 border border-indigo-200 text-indigo-600"
                 : dm
-                ? "bg-gray-900/80 border border-white/10 text-gray-400 hover:text-white"
-                : "bg-white/80 border border-gray-200 text-gray-500 hover:text-gray-900 shadow-sm"
-            }`}
+                  ? "bg-gray-900/80 border border-white/10 text-gray-400 hover:text-white"
+                  : "bg-white/80 border border-gray-200 text-gray-500 hover:text-gray-900 shadow-sm"
+              }`}
           >
             <List size={14} />
             目录
@@ -379,11 +403,10 @@ export function Post({ darkMode }: PostProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className={`fixed top-[72px] right-6 z-40 xl:hidden w-52 rounded-xl border p-4 shadow-xl ${
-              dm
+            className={`fixed top-[72px] right-6 z-40 xl:hidden w-52 rounded-xl border p-4 shadow-xl ${dm
                 ? "bg-gray-900 border-white/10"
                 : "bg-white border-gray-200 shadow-gray-200/50"
-            }`}
+              }`}
           >
             <TableOfContents
               headings={headings}
@@ -410,11 +433,10 @@ export function Post({ darkMode }: PostProps) {
           transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
         />
         <div
-          className={`absolute inset-0 ${
-            dm
+          className={`absolute inset-0 ${dm
               ? "bg-gradient-to-b from-gray-950/30 to-gray-950"
               : "bg-gradient-to-b from-black/10 to-white"
-          }`}
+            }`}
         />
       </motion.div>
 
@@ -432,27 +454,24 @@ export function Post({ darkMode }: PostProps) {
             >
               <div className="flex items-center gap-2 mb-4">
                 <span
-                  className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${
-                    dm
+                  className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${dm
                       ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/20"
                       : "bg-indigo-50 text-indigo-600 border border-indigo-100"
-                  }`}
+                    }`}
                 >
                   <Tag size={10} />
                   {post.category}
                 </span>
               </div>
               <h1
-                className={`text-3xl md:text-4xl font-light leading-tight mb-4 ${
-                  dm ? "text-white" : "text-gray-900"
-                }`}
+                className={`text-3xl md:text-4xl font-light leading-tight mb-4 ${dm ? "text-white" : "text-gray-900"
+                  }`}
               >
                 {post.title}
               </h1>
               <p
-                className={`text-lg leading-relaxed mb-6 ${
-                  dm ? "text-gray-400" : "text-gray-500"
-                }`}
+                className={`text-lg leading-relaxed mb-6 ${dm ? "text-gray-400" : "text-gray-500"
+                  }`}
               >
                 {post.excerpt}
               </p>
@@ -460,26 +479,23 @@ export function Post({ darkMode }: PostProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium ${
-                      dm
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium ${dm
                         ? "bg-indigo-500 text-white"
                         : "bg-indigo-600 text-white"
-                    }`}
+                      }`}
                   >
                     陈
                   </div>
                   <div>
                     <p
-                      className={`text-sm font-medium ${
-                        dm ? "text-white" : "text-gray-900"
-                      }`}
+                      className={`text-sm font-medium ${dm ? "text-white" : "text-gray-900"
+                        }`}
                     >
                       陈默
                     </p>
                     <div
-                      className={`flex items-center gap-2 text-xs ${
-                        dm ? "text-gray-500" : "text-gray-400"
-                      }`}
+                      className={`flex items-center gap-2 text-xs ${dm ? "text-gray-500" : "text-gray-400"
+                        }`}
                     >
                       <span>{post.date}</span>
                       <span>·</span>
@@ -498,9 +514,8 @@ export function Post({ darkMode }: PostProps) {
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className={`text-xs ${
-                          dm ? "text-green-400" : "text-green-600"
-                        }`}
+                        className={`text-xs ${dm ? "text-green-400" : "text-green-600"
+                          }`}
                       >
                         已复制链接
                       </motion.span>
@@ -509,11 +524,10 @@ export function Post({ darkMode }: PostProps) {
                   <motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={handleShare}
-                    className={`p-2 rounded-lg transition-colors ${
-                      dm
+                    className={`p-2 rounded-lg transition-colors ${dm
                         ? "hover:bg-white/5 text-gray-500"
                         : "hover:bg-gray-100 text-gray-400"
-                    }`}
+                      }`}
                   >
                     <Share2 size={16} />
                   </motion.button>
@@ -526,9 +540,8 @@ export function Post({ darkMode }: PostProps) {
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ delay: 0.3 }}
-              className={`h-px mb-10 origin-left ${
-                dm ? "bg-white/5" : "bg-gray-100"
-              }`}
+              className={`h-px mb-10 origin-left ${dm ? "bg-white/5" : "bg-gray-100"
+                }`}
             />
 
             {/* Article content */}
@@ -555,11 +568,10 @@ export function Post({ darkMode }: PostProps) {
               {post.tags.map((tag) => (
                 <span
                   key={tag}
-                  className={`text-sm px-3 py-1.5 rounded-lg ${
-                    dm
+                  className={`text-sm px-3 py-1.5 rounded-lg ${dm
                       ? "bg-white/5 text-gray-400"
                       : "bg-gray-100 text-gray-600"
-                  }`}
+                    }`}
                 >
                   # {tag}
                 </span>
@@ -571,14 +583,12 @@ export function Post({ darkMode }: PostProps) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className={`flex items-center justify-between mt-10 p-5 rounded-2xl border ${
-                dm ? "bg-gray-900 border-white/5" : "bg-gray-50 border-gray-100"
-              }`}
+              className={`flex items-center justify-between mt-10 p-5 rounded-2xl border ${dm ? "bg-gray-900 border-white/5" : "bg-gray-50 border-gray-100"
+                }`}
             >
               <p
-                className={`text-sm ${
-                  dm ? "text-gray-400" : "text-gray-500"
-                }`}
+                className={`text-sm ${dm ? "text-gray-400" : "text-gray-500"
+                  }`}
               >
                 如果这篇文章对你有帮助，请点赞支持 😊
               </p>
@@ -587,13 +597,12 @@ export function Post({ darkMode }: PostProps) {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.85 }}
                   onClick={() => setLiked(!liked)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                    liked
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${liked
                       ? "bg-rose-500 text-white"
                       : dm
-                      ? "bg-white/5 text-gray-400 hover:bg-white/10"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                  }`}
+                        ? "bg-white/5 text-gray-400 hover:bg-white/10"
+                        : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+                    }`}
                 >
                   <motion.div
                     animate={{ scale: liked ? [1, 1.5, 1] : 1 }}
@@ -607,15 +616,14 @@ export function Post({ darkMode }: PostProps) {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.85 }}
                   onClick={() => setBookmarked(!bookmarked)}
-                  className={`p-2 rounded-xl transition-all ${
-                    bookmarked
+                  className={`p-2 rounded-xl transition-all ${bookmarked
                       ? dm
                         ? "bg-indigo-500/20 text-indigo-400"
                         : "bg-indigo-50 text-indigo-600"
                       : dm
-                      ? "bg-white/5 text-gray-400 hover:bg-white/10"
-                      : "bg-white text-gray-500 border border-gray-200"
-                  }`}
+                        ? "bg-white/5 text-gray-400 hover:bg-white/10"
+                        : "bg-white text-gray-500 border border-gray-200"
+                    }`}
                 >
                   <Bookmark
                     size={16}
@@ -634,9 +642,8 @@ export function Post({ darkMode }: PostProps) {
                 className="mt-14"
               >
                 <h3
-                  className={`text-lg font-medium mb-5 ${
-                    dm ? "text-white" : "text-gray-900"
-                  }`}
+                  className={`text-lg font-medium mb-5 ${dm ? "text-white" : "text-gray-900"
+                    }`}
                 >
                   相关文章
                 </h3>
@@ -645,11 +652,10 @@ export function Post({ darkMode }: PostProps) {
                     <Link
                       key={rp.id}
                       to={`/post/${rp.slug}`}
-                      className={`flex items-center gap-4 p-4 rounded-xl border transition-all group ${
-                        dm
+                      className={`flex items-center gap-4 p-4 rounded-xl border transition-all group ${dm
                           ? "border-white/5 hover:border-white/10 bg-gray-900/50"
                           : "border-gray-100 hover:border-gray-200 bg-gray-50/50"
-                      }`}
+                        }`}
                     >
                       <img
                         src={rp.coverImage}
@@ -658,25 +664,22 @@ export function Post({ darkMode }: PostProps) {
                       />
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`text-sm font-medium line-clamp-1 group-hover:text-indigo-500 transition-colors ${
-                            dm ? "text-white" : "text-gray-900"
-                          }`}
+                          className={`text-sm font-medium line-clamp-1 group-hover:text-indigo-500 transition-colors ${dm ? "text-white" : "text-gray-900"
+                            }`}
                         >
                           {rp.title}
                         </p>
                         <p
-                          className={`text-xs mt-0.5 flex items-center gap-1 ${
-                            dm ? "text-gray-500" : "text-gray-400"
-                          }`}
+                          className={`text-xs mt-0.5 flex items-center gap-1 ${dm ? "text-gray-500" : "text-gray-400"
+                            }`}
                         >
                           <Clock size={10} /> {rp.readTime} 分钟
                         </p>
                       </div>
                       <ChevronRight
                         size={14}
-                        className={`shrink-0 transition-transform group-hover:translate-x-1 ${
-                          dm ? "text-gray-600" : "text-gray-300"
-                        }`}
+                        className={`shrink-0 transition-transform group-hover:translate-x-1 ${dm ? "text-gray-600" : "text-gray-300"
+                          }`}
                       />
                     </Link>
                   ))}
@@ -692,9 +695,8 @@ export function Post({ darkMode }: PostProps) {
               className="mt-14"
             >
               <h3
-                className={`text-lg font-medium mb-6 flex items-center gap-2 ${
-                  dm ? "text-white" : "text-gray-900"
-                }`}
+                className={`text-lg font-medium mb-6 flex items-center gap-2 ${dm ? "text-white" : "text-gray-900"
+                  }`}
               >
                 <MessageCircle size={18} />
                 评论 ({comments.length})
@@ -703,18 +705,16 @@ export function Post({ darkMode }: PostProps) {
               {/* Comment input */}
               <form onSubmit={handleComment} className="mb-8">
                 <div
-                  className={`flex gap-3 p-4 rounded-2xl border ${
-                    dm
+                  className={`flex gap-3 p-4 rounded-2xl border ${dm
                       ? "bg-gray-900 border-white/5"
                       : "bg-gray-50 border-gray-100"
-                  }`}
+                    }`}
                 >
                   <div
-                    className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-medium ${
-                      dm
+                    className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-medium ${dm
                         ? "bg-indigo-500 text-white"
                         : "bg-indigo-600 text-white"
-                    }`}
+                      }`}
                   >
                     你
                   </div>
@@ -724,9 +724,8 @@ export function Post({ darkMode }: PostProps) {
                       onChange={(e) => setComment(e.target.value)}
                       placeholder="写下你的想法..."
                       rows={3}
-                      className={`w-full bg-transparent outline-none resize-none text-sm placeholder:text-gray-500 ${
-                        dm ? "text-white" : "text-gray-900"
-                      }`}
+                      className={`w-full bg-transparent outline-none resize-none text-sm placeholder:text-gray-500 ${dm ? "text-white" : "text-gray-900"
+                        }`}
                     />
                     <div className="flex justify-end mt-2">
                       <motion.button
@@ -734,15 +733,14 @@ export function Post({ darkMode }: PostProps) {
                         whileTap={{ scale: 0.97 }}
                         type="submit"
                         disabled={!comment.trim()}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all ${
-                          comment.trim()
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all ${comment.trim()
                             ? dm
                               ? "bg-indigo-500 text-white hover:bg-indigo-400"
                               : "bg-indigo-600 text-white hover:bg-indigo-700"
                             : dm
-                            ? "bg-white/5 text-gray-600 cursor-not-allowed"
-                            : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        }`}
+                              ? "bg-white/5 text-gray-600 cursor-not-allowed"
+                              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          }`}
                       >
                         <Send size={12} />
                         发布
@@ -764,39 +762,35 @@ export function Post({ darkMode }: PostProps) {
                       className="flex gap-3"
                     >
                       <div
-                        className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-medium ${
-                          c.author === "你"
+                        className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-medium ${c.author === "你"
                             ? dm
                               ? "bg-indigo-500 text-white"
                               : "bg-indigo-600 text-white"
                             : dm
-                            ? "bg-white/10 text-gray-300"
-                            : "bg-gray-200 text-gray-600"
-                        }`}
+                              ? "bg-white/10 text-gray-300"
+                              : "bg-gray-200 text-gray-600"
+                          }`}
                       >
                         {c.avatar}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span
-                            className={`text-sm font-medium ${
-                              dm ? "text-white" : "text-gray-900"
-                            }`}
+                            className={`text-sm font-medium ${dm ? "text-white" : "text-gray-900"
+                              }`}
                           >
                             {c.author}
                           </span>
                           <span
-                            className={`text-xs ${
-                              dm ? "text-gray-600" : "text-gray-400"
-                            }`}
+                            className={`text-xs ${dm ? "text-gray-600" : "text-gray-400"
+                              }`}
                           >
                             {c.time}
                           </span>
                         </div>
                         <p
-                          className={`text-sm leading-relaxed ${
-                            dm ? "text-gray-400" : "text-gray-600"
-                          }`}
+                          className={`text-sm leading-relaxed ${dm ? "text-gray-400" : "text-gray-600"
+                            }`}
                         >
                           {c.content}
                         </p>
@@ -826,9 +820,8 @@ export function Post({ darkMode }: PostProps) {
                 {/* Progress indicator */}
                 <div className="mt-8">
                   <div
-                    className={`flex items-center justify-between text-xs mb-2 ${
-                      dm ? "text-gray-600" : "text-gray-400"
-                    }`}
+                    className={`flex items-center justify-between text-xs mb-2 ${dm ? "text-gray-600" : "text-gray-400"
+                      }`}
                   >
                     <span className="flex items-center gap-1">
                       <Clock size={10} />
@@ -837,9 +830,8 @@ export function Post({ darkMode }: PostProps) {
                     <span>{post.readTime} 分钟</span>
                   </div>
                   <div
-                    className={`h-1 rounded-full overflow-hidden ${
-                      dm ? "bg-white/5" : "bg-gray-100"
-                    }`}
+                    className={`h-1 rounded-full overflow-hidden ${dm ? "bg-white/5" : "bg-gray-100"
+                      }`}
                   >
                     <motion.div
                       style={{ scaleX, transformOrigin: "left" }}
