@@ -54,7 +54,7 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
 
       return matchSearch && matchCategory && matchTags;
     });
-  }, [searchQuery, selectedCategory, selectedTags]);
+  }, [posts, searchQuery, selectedCategory, selectedTags]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -87,7 +87,7 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
             文章列表
           </h1>
           <p className={`mt-3 ${dm ? "text-gray-400" : "text-gray-500"}`}>
-            共 {posts.length} 篇文章，记录思考与探索
+            共 {posts.length} 篇文章
           </p>
         </motion.div>
 
@@ -99,8 +99,8 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
           className="flex gap-3 mb-6"
         >
           <div className={`flex-1 flex items-center gap-3 px-4 py-2.5 rounded-xl border transition-all ${dm
-              ? "bg-gray-900 border-white/5 focus-within:border-indigo-500/50"
-              : "bg-gray-50 border-gray-200 focus-within:border-indigo-300"
+            ? "bg-gray-900 border-white/5 focus-within:border-indigo-500/50"
+            : "bg-gray-50 border-gray-200 focus-within:border-indigo-300"
             }`}>
             <Search size={16} className={dm ? "text-gray-500" : "text-gray-400"} />
             <input
@@ -121,12 +121,12 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
             whileTap={{ scale: 0.97 }}
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${showFilters || hasFilters
-                ? dm
-                  ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-400"
-                  : "bg-indigo-50 border-indigo-200 text-indigo-600"
-                : dm
-                  ? "bg-gray-900 border-white/5 text-gray-400 hover:border-white/10"
-                  : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300"
+              ? dm
+                ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-400"
+                : "bg-indigo-50 border-indigo-200 text-indigo-600"
+              : dm
+                ? "bg-gray-900 border-white/5 text-gray-400 hover:border-white/10"
+                : "bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300"
               }`}
           >
             <SlidersHorizontal size={15} />
@@ -144,8 +144,8 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
                 key={mode}
                 onClick={() => setViewMode(mode)}
                 className={`p-2 rounded-lg transition-all ${viewMode === mode
-                    ? dm ? "bg-white/10 text-white" : "bg-white text-gray-900 shadow-sm"
-                    : dm ? "text-gray-600 hover:text-gray-400" : "text-gray-400 hover:text-gray-600"
+                  ? dm ? "bg-white/10 text-white" : "bg-white text-gray-900 shadow-sm"
+                  : dm ? "text-gray-600 hover:text-gray-400" : "text-gray-400 hover:text-gray-600"
                   }`}
               >
                 {mode === "list" ? <List size={15} /> : <LayoutGrid size={15} />}
@@ -175,8 +175,8 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
                         className={`px-3 py-1.5 rounded-lg text-sm transition-all ${selectedCategory === cat
-                            ? dm ? "bg-indigo-500 text-white" : "bg-indigo-600 text-white"
-                            : dm ? "bg-white/5 text-gray-400 hover:bg-white/10" : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
+                          ? dm ? "bg-indigo-500 text-white" : "bg-indigo-600 text-white"
+                          : dm ? "bg-white/5 text-gray-400 hover:bg-white/10" : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
                           }`}
                       >
                         {cat}
@@ -195,8 +195,8 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => toggleTag(tag)}
                         className={`px-3 py-1.5 rounded-lg text-sm transition-all ${selectedTags.includes(tag)
-                            ? dm ? "bg-violet-500/30 text-violet-300 border border-violet-500/30" : "bg-violet-50 text-violet-700 border border-violet-200"
-                            : dm ? "bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent" : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
+                          ? dm ? "bg-violet-500/30 text-violet-300 border border-violet-500/30" : "bg-violet-50 text-violet-700 border border-violet-200"
+                          : dm ? "bg-white/5 text-gray-400 hover:bg-white/10 border border-transparent" : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300"
                           }`}
                       >
                         # {tag}
@@ -230,8 +230,8 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
           <button
             onClick={() => setSelectedCategory(null)}
             className={`px-3 py-1.5 rounded-full text-sm transition-all ${!selectedCategory
-                ? dm ? "bg-white text-gray-900" : "bg-gray-900 text-white"
-                : dm ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-700"
+              ? dm ? "bg-white text-gray-900" : "bg-gray-900 text-white"
+              : dm ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-700"
               }`}
           >
             全部
@@ -241,8 +241,8 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
               key={cat}
               onClick={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
               className={`px-3 py-1.5 rounded-full text-sm transition-all ${selectedCategory === cat
-                  ? dm ? "bg-indigo-500 text-white" : "bg-indigo-600 text-white"
-                  : dm ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-700"
+                ? dm ? "bg-indigo-500 text-white" : "bg-indigo-600 text-white"
+                : dm ? "text-gray-500 hover:text-gray-300" : "text-gray-400 hover:text-gray-700"
                 }`}
             >
               {cat}
