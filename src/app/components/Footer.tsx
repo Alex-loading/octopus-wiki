@@ -18,13 +18,13 @@ export function Footer({ darkMode }: FooterProps) {
               <Feather size={14} className="text-white" />
             </div>
             <span className={`text-sm ${dm ? "text-gray-400" : "text-gray-500"}`}>
-              陈默的个人博客
+              Octopus的个人博客
             </span>
           </Link>
 
           <div className="flex items-center gap-5">
             {[
-              { href: "#", icon: Github },
+              { href: "https://github.com/Alex-loading", icon: Github },
               { href: "#", icon: Twitter },
               { href: "#", icon: Mail },
               { href: "#", icon: Rss },
