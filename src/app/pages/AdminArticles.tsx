@@ -8,6 +8,7 @@ import {
   updateArticle,
   deleteArticle,
   publishArticle,
+  setArticleFeatured,
   getUserRoleState,
   signOutAdmin,
 } from "../content/repository";
@@ -60,6 +61,7 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [togglingFeaturedId, setTogglingFeaturedId] = useState<string | null>(null);
   const [form, setForm] = useState<ArticleFormState>(EMPTY_FORM);
 
   const editingArticle = useMemo(
@@ -165,6 +167,33 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
 
     setNotice(nextStatus === "published" ? "文章已发布" : "文章已切换为草稿");
     await refreshArticles();
+  };
+
+  const handleFeaturedSwitch = async (id: string, nextFeatured: boolean) => {
+    setError("");
+    setNotice("");
+    setTogglingFeaturedId(id);
+
+    const result = await setArticleFeatured(id, nextFeatured);
+    setTogglingFeaturedId(null);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    let matched = false;
+    setArticles((prev) => prev.map((article) => {
+      if (article.id !== result.data.id) return article;
+      matched = true;
+      return { ...article, featured: result.data.featured };
+    }));
+
+    if (!matched) {
+      await refreshArticles();
+    }
+
+    setNotice(result.data.featured ? "已设为精选" : "已取消精选");
   };
 
   if (checkingAccess) {
@@ -275,6 +304,8 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
               <div className="space-y-2">
                 {articles.map((article) => {
                   const status = article.status ?? "draft";
+                  const isFeatured = Boolean(article.featured);
+                  const isTogglingFeatured = togglingFeaturedId === article.id;
                   return (
                     <div
                       key={article.id}
@@ -315,11 +346,27 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
                           }`}>
                           {status === "published" ? "已发布" : "草稿"}
                         </span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${isFeatured
+                          ? dm ? "bg-indigo-500/20 text-indigo-300" : "bg-indigo-100 text-indigo-600"
+                          : dm ? "bg-gray-800 text-gray-400" : "bg-gray-200 text-gray-600"
+                          }`}>
+                          {isFeatured ? "精选" : "普通"}
+                        </span>
                         <button
                           onClick={() => handlePublishSwitch(article.id, status === "published" ? "draft" : "published")}
                           className={`text-xs px-2.5 py-1 rounded-lg border ${dm ? "border-white/10 text-gray-300 hover:text-white" : "border-gray-200 text-gray-600 hover:text-gray-900"}`}
                         >
                           {status === "published" ? "转为草稿" : "发布"}
+                        </button>
+                        <button
+                          onClick={() => handleFeaturedSwitch(article.id, !isFeatured)}
+                          disabled={isTogglingFeatured}
+                          className={`text-xs px-2.5 py-1 rounded-lg border ${isTogglingFeatured
+                            ? dm ? "border-white/10 text-gray-500" : "border-gray-200 text-gray-400"
+                            : dm ? "border-white/10 text-gray-300 hover:text-white" : "border-gray-200 text-gray-600 hover:text-gray-900"
+                            }`}
+                        >
+                          {isTogglingFeatured ? "处理中..." : isFeatured ? "取消精选" : "设为精选"}
                         </button>
                         <span className={`text-xs ${dm ? "text-gray-500" : "text-gray-500"}`}>更新时间：{article.date}</span>
                       </div>

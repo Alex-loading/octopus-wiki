@@ -69,6 +69,11 @@ type WriteResult<T = null> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
+type ArticleFeaturedUpdate = {
+  id: string;
+  featured: boolean;
+};
+
 type ArticleWriteInput = {
   title: string;
   slug: string;
@@ -426,4 +431,35 @@ export async function publishArticle(id: string, status: "published" | "draft"):
   const { error } = await supabase.from("articles").update(updates).eq("id", id).is("deleted_at", null);
   if (error) return { ok: false, error: mapWriteError(error) };
   return { ok: true, data: null };
+}
+
+export async function setArticleFeatured(id: string, featured: boolean): Promise<WriteResult<ArticleFeaturedUpdate>> {
+  if (!supabase) return { ok: false, error: "Supabase 未配置。" };
+
+  const roleState = await getUserRoleState();
+  if (!roleState.authenticated) return { ok: false, error: "请先登录管理员账号。" };
+  if (!roleState.isAdmin) return { ok: false, error: "当前账号不是管理员。" };
+
+  const { data, error } = await supabase
+    .from("articles")
+    .update({
+      featured,
+      updated_at: new Date().toISOString(),
+      updated_by: roleState.userId,
+    })
+    .eq("id", id)
+    .is("deleted_at", null)
+    .select("id,featured")
+    .maybeSingle();
+
+  if (error) return { ok: false, error: mapWriteError(error) };
+  if (!data) return { ok: false, error: "文章不存在或已被删除。" };
+
+  return {
+    ok: true,
+    data: {
+      id: String(data.id),
+      featured: Boolean(data.featured),
+    },
+  };
 }
