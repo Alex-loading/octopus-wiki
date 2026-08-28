@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useScroll, useSpring } from "motion/react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
@@ -334,6 +335,7 @@ function MarkdownRenderer({
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[
+          rehypeRaw,
           rehypeSlug,
           [rehypeAutolinkHeadings, {
             behavior: "append",

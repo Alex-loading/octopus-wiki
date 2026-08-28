@@ -11,6 +11,9 @@ export interface Post {
   readTime: number;
   featured?: boolean;
   status?: "draft" | "published";
+  feishuDocUrl?: string;
+  feishuRevisionId?: string;
+  feishuSyncedAt?: string;
 }
 
 export const posts: Post[] = [

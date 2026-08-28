@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { Pencil, Plus, Save, Trash2, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Pencil, Plus, Save, Trash2, ShieldAlert, CheckCircle2, RefreshCw } from "lucide-react";
 import type { Post } from "../data/posts";
 import {
   listAdminArticles,
@@ -11,6 +11,7 @@ import {
   setArticleFeatured,
   getUserRoleState,
   signOutAdmin,
+  syncFeishuDocument,
 } from "../content/repository";
 
 interface AdminArticlesProps {
@@ -25,6 +26,9 @@ interface ArticleFormState {
   category: string;
   tags: string;
   coverImage: string;
+  feishuDocUrl: string;
+  feishuRevisionId: string;
+  feishuSyncedAt: string;
 }
 
 const EMPTY_FORM: ArticleFormState = {
@@ -35,6 +39,9 @@ const EMPTY_FORM: ArticleFormState = {
   category: "技术",
   tags: "",
   coverImage: "",
+  feishuDocUrl: "",
+  feishuRevisionId: "",
+  feishuSyncedAt: "",
 };
 
 function toFormValue(post: Post): ArticleFormState {
@@ -46,6 +53,9 @@ function toFormValue(post: Post): ArticleFormState {
     category: post.category,
     tags: post.tags.join(","),
     coverImage: post.coverImage,
+    feishuDocUrl: post.feishuDocUrl ?? "",
+    feishuRevisionId: post.feishuRevisionId ?? "",
+    feishuSyncedAt: post.feishuSyncedAt ?? "",
   };
 }
 
@@ -63,6 +73,7 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [togglingFeaturedId, setTogglingFeaturedId] = useState<string | null>(null);
   const [form, setForm] = useState<ArticleFormState>(EMPTY_FORM);
+  const [importingFeishu, setImportingFeishu] = useState(false);
 
   const editingArticle = useMemo(
     () => articles.find((article) => article.id === editingId) ?? null,
@@ -121,6 +132,9 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
       category: form.category,
       tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
       coverImage: form.coverImage,
+      feishuDocUrl: form.feishuDocUrl,
+      feishuRevisionId: form.feishuRevisionId,
+      feishuSyncedAt: form.feishuSyncedAt,
     };
 
     const result = editingId
@@ -196,6 +210,37 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
     setNotice(result.data.featured ? "已设为精选" : "已取消精选");
   };
 
+  const handleFeishuImport = async () => {
+    setError("");
+    setNotice("");
+
+    if (!form.feishuDocUrl.trim()) {
+      setError("请输入飞书文档链接。");
+      return;
+    }
+
+    if (form.content.trim() && !window.confirm("同步预览会覆盖当前正文，确认继续？")) {
+      return;
+    }
+
+    setImportingFeishu(true);
+    const result = await syncFeishuDocument(form.feishuDocUrl);
+    setImportingFeishu(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      content: result.data.markdown,
+      feishuRevisionId: result.data.revisionId,
+      feishuSyncedAt: new Date().toISOString(),
+    }));
+    setNotice(`飞书同步预览成功：${result.data.title}`);
+  };
+
   if (checkingAccess) {
     return (
       <div className={`min-h-screen pt-24 flex items-center justify-center ${dm ? "bg-gray-950 text-gray-400" : "bg-white text-gray-500"}`}>
@@ -245,6 +290,42 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
             </div>
 
             <form className="space-y-3" onSubmit={handleSubmit}>
+              <div className={`rounded-xl border p-3 space-y-2 ${dm ? "border-white/10 bg-gray-950" : "border-gray-200 bg-gray-50"}`}>
+                <span className={`text-xs ${dm ? "text-gray-400" : "text-gray-500"}`}>飞书实时内容</span>
+
+                <label className="block">
+                  <span className={`text-xs mb-1 block ${dm ? "text-gray-400" : "text-gray-500"}`}>飞书文档链接</span>
+                  <input
+                    value={form.feishuDocUrl}
+                    onChange={(event) => setForm((prev) => ({
+                      ...prev,
+                      feishuDocUrl: event.target.value,
+                      feishuRevisionId: "",
+                      feishuSyncedAt: "",
+                    }))}
+                    placeholder="https://xxx.feishu.cn/wiki/... 或 /docx/..."
+                    className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${dm ? "bg-gray-900 border-white/10 text-white placeholder:text-gray-600" : "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400"}`}
+                  />
+                </label>
+
+                <p className={`text-xs ${dm ? "text-gray-500" : "text-gray-500"}`}>
+                  凭证由服务端管理；保存链接后，文章页会实时拉取并在失败时回退到当前正文快照。
+                </p>
+
+                <button
+                  type="button"
+                  onClick={handleFeishuImport}
+                  disabled={importingFeishu}
+                  className={`w-full rounded-xl px-4 py-2 text-sm font-medium inline-flex items-center justify-center gap-2 ${importingFeishu
+                    ? dm ? "bg-white/10 text-gray-500" : "bg-gray-200 text-gray-400"
+                    : dm ? "bg-indigo-500/80 text-white hover:bg-indigo-400" : "bg-indigo-600 text-white hover:bg-indigo-700"
+                    }`}
+                >
+                  <RefreshCw size={14} className={importingFeishu ? "animate-spin" : ""} />
+                  {importingFeishu ? "同步中..." : "同步预览并覆盖正文"}
+                </button>
+              </div>
+
               {([
                 { key: "title", label: "标题" },
                 { key: "slug", label: "Slug" },
@@ -378,6 +459,7 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
           </section>
         </div>
       </div>
+
     </div>
   );
 }

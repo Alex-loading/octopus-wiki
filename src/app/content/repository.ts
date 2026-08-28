@@ -3,6 +3,11 @@ import type { Post } from "../data/posts";
 import { posts as staticPosts } from "../data/posts";
 import type { Demo } from "../data/demos";
 import { demos as staticDemos } from "../data/demos";
+import {
+  fetchLiveArticleContent,
+  previewFeishuDocument,
+  type FeishuPreview,
+} from "./liveContent";
 
 type ArticleRow = {
   id: string | number;
@@ -20,6 +25,9 @@ type ArticleRow = {
   updated_at?: string | null;
   status?: string | null;
   deleted_at?: string | null;
+  feishu_doc_url?: string | null;
+  feishu_revision_id?: string | null;
+  feishu_synced_at?: string | null;
 };
 
 type DemoRow = {
@@ -41,6 +49,9 @@ type DemoRow = {
 
 const DEFAULT_COVER =
   "https://images.unsplash.com/photo-1499750310107-5fef28a66643?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
+
+const ARTICLE_SELECT_FIELDS =
+  "id,slug,title,summary,content,content_md,cover_image,tags,category,read_time,featured,published_at,updated_at,status,deleted_at,feishu_doc_url,feishu_revision_id,feishu_synced_at";
 
 const contentSource = (import.meta.env.VITE_CONTENT_SOURCE ?? "auto").toLowerCase();
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -82,6 +93,9 @@ type ArticleWriteInput = {
   category: string;
   tags: string[];
   coverImage?: string;
+  feishuDocUrl?: string;
+  feishuRevisionId?: string;
+  feishuSyncedAt?: string;
 };
 
 function estimateReadTime(content: string): number {
@@ -92,7 +106,7 @@ function estimateReadTime(content: string): number {
 }
 
 function normalizeArticle(row: ArticleRow): Post {
-  const content = row.content ?? row.content_md ?? "";
+  const content = row.content || row.content_md || "";
   return {
     id: String(row.id ?? row.slug),
     slug: row.slug,
@@ -106,6 +120,9 @@ function normalizeArticle(row: ArticleRow): Post {
     readTime: row.read_time ?? estimateReadTime(content),
     featured: Boolean(row.featured),
     status: row.status === "draft" ? "draft" : "published",
+    feishuDocUrl: row.feishu_doc_url ?? undefined,
+    feishuRevisionId: row.feishu_revision_id ?? undefined,
+    feishuSyncedAt: row.feishu_synced_at ?? undefined,
   };
 }
 
@@ -199,7 +216,7 @@ export async function listArticles(): Promise<Post[]> {
 
   const { data, error } = await supabase
     .from("articles")
-    .select("id,slug,title,summary,content,content_md,cover_image,tags,category,read_time,featured,published_at,updated_at,status,deleted_at")
+    .select(ARTICLE_SELECT_FIELDS)
     .eq("status", "published")
     .is("deleted_at", null)
     .order("published_at", { ascending: false, nullsFirst: false });
@@ -218,7 +235,7 @@ export async function getArticleBySlug(slug: string): Promise<Post | null> {
 
   const { data, error } = await supabase
     .from("articles")
-    .select("id,slug,title,summary,content,content_md,cover_image,tags,category,read_time,featured,published_at,updated_at,status,deleted_at")
+    .select(ARTICLE_SELECT_FIELDS)
     .eq("slug", slug)
     .eq("status", "published")
     .is("deleted_at", null)
@@ -228,7 +245,14 @@ export async function getArticleBySlug(slug: string): Promise<Post | null> {
     return fallbackArticles().find((item) => item.slug === slug) ?? null;
   }
 
-  return normalizeArticle(data as ArticleRow);
+  const snapshot = normalizeArticle(data as ArticleRow);
+  if (!snapshot.feishuDocUrl) return snapshot;
+
+  try {
+    return await fetchLiveArticleContent(snapshot);
+  } catch {
+    return snapshot;
+  }
 }
 
 export async function listDemos(): Promise<Demo[]> {
@@ -289,7 +313,7 @@ export async function listAdminArticles(): Promise<WriteResult<Post[]>> {
 
   const { data, error } = await supabase
     .from("articles")
-    .select("id,slug,title,summary,content,content_md,cover_image,tags,category,read_time,featured,published_at,updated_at,status,deleted_at")
+    .select(ARTICLE_SELECT_FIELDS)
     .is("deleted_at", null)
     .order("updated_at", { ascending: false, nullsFirst: false });
 
@@ -338,6 +362,9 @@ function toArticleRowPayload(input: ArticleWriteInput, userId: string | null) {
     category: input.category.trim() || "未分类",
     tags: input.tags,
     cover_image: input.coverImage?.trim() || null,
+    feishu_doc_url: input.feishuDocUrl?.trim() || null,
+    feishu_revision_id: input.feishuDocUrl?.trim() ? input.feishuRevisionId?.trim() || null : null,
+    feishu_synced_at: input.feishuDocUrl?.trim() ? input.feishuSyncedAt?.trim() || null : null,
     read_time: estimateReadTime(input.content),
     updated_at: now,
     updated_by: userId,
@@ -462,4 +489,28 @@ export async function setArticleFeatured(id: string, featured: boolean): Promise
       featured: Boolean(data.featured),
     },
   };
+}
+
+export async function syncFeishuDocument(docUrl: string): Promise<WriteResult<FeishuPreview>> {
+  if (!docUrl.trim()) {
+    return { ok: false, error: "飞书文档链接不能为空。" };
+  }
+  if (!supabase) {
+    return { ok: false, error: "Supabase 未配置，无法验证管理员身份。" };
+  }
+
+  const { data, error } = await supabase.auth.getSession();
+  const accessToken = data.session?.access_token ?? "";
+  if (error || !accessToken) {
+    return { ok: false, error: "登录状态已失效，请重新登录。" };
+  }
+
+  try {
+    return {
+      ok: true,
+      data: await previewFeishuDocument(docUrl, accessToken),
+    };
+  } catch (previewError) {
+    return { ok: false, error: mapWriteError(previewError) };
+  }
 }
