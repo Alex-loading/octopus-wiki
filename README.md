@@ -42,14 +42,16 @@
 
   `/collect/setup` provides a desktop bookmarklet, Android PWA installation/share instructions,
   and an iOS Shortcuts integration recipe. On Android, copy the whole sharing text from the original
-  app, open the installed collector, and choose “粘贴并识别” (or long-press to paste). App-specific share
+  app, open the installed collector, paste into the input, and choose “读取标题与封面”. A link alone
+  is enough to request metadata. App-specific share
   panels cannot be extended through Web Share Target. Sharing text prefills a title, and short links
   remain saveable when metadata is unavailable; covers are optional. The metadata preview
   API reuses the server-only Supabase variables; unsupported or blocked previews can be filled
   manually. Full content backup and synchronization with platform-native favorites are not included.
 
   Enable 90-day device authorization once at `/collect/setup` to collect from new windows
-  without repeating administrator login. Existing bookmarklets keep working. The scoped
+  without repeating administrator login. Saved bookmarklets do not update with website deployments;
+  replace them from the setup page to pick up new metadata support. The scoped
   `/api/collector` uses server-only Supabase variables and supports revocation; editing and
   deletion continue to require administrator login.
 

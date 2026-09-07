@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ClipboardPaste, Image, Plus, Save, WandSparkles } from "lucide-react";
+import { Image, Plus, Save, WandSparkles } from "lucide-react";
 import {
   emptyBookmark,
   extractBookmarkUrls,
@@ -47,7 +47,6 @@ export function BookmarkForm({
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
-  const [pasting, setPasting] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newBox, setNewBox] = useState("");
   const [newBoxPublic, setNewBoxPublic] = useState(true);
@@ -79,28 +78,6 @@ export function BookmarkForm({
       url: share.urls.length === 1 ? share.urls[0] : "",
       title: suggestedTitle.current ? share.title : current.title,
     }));
-  };
-  const paste = async () => {
-    if (pasting) return;
-    setPasting(true);
-    try {
-      const value = await navigator.clipboard.readText();
-      if (!live.current) return;
-      if (!value.trim() || value.length > 6000) {
-        setNotice(
-          value.length > 6000
-            ? "分享文案过长，请精简到 6000 字以内后粘贴。"
-            : "剪贴板没有文字，请先在原 App 复制链接。",
-        );
-        return;
-      }
-      changeText(value);
-    } catch {
-      if (live.current)
-        setNotice("无法读取剪贴板，请在上方输入框长按，选择「粘贴」。");
-    } finally {
-      if (live.current) setPasting(false);
-    }
   };
   const preview = async () => {
     if (!draft.url || previewing) return;
@@ -198,19 +175,8 @@ export function BookmarkForm({
             required
           />
         </label>
-        <div className="bookmark-form-actions">
-          <button
-            type="button"
-            onClick={paste}
-            disabled={pasting}
-            className="bookmark-button"
-          >
-            <ClipboardPaste size={15} />
-            {pasting ? "粘贴中…" : "粘贴并识别"}
-          </button>
-        </div>
         <p className="bookmark-hint">
-          原 App 分享面板中没有收藏箱时，复制整段分享文案后到这里粘贴。标题可从文案提取，封面选填；无需先展开短链。
+          输入链接后，点击「读取标题与封面」获取网页信息。支持短链，无需先展开。
         </p>
         {urls.length > 1 && (
           <label>
