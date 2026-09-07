@@ -1,7 +1,6 @@
-import { useState } from "react";
 import { Link } from "react-router";
 import { motion } from "motion/react";
-import { Clock, Heart, Bookmark, ArrowUpRight, Tag } from "lucide-react";
+import { Clock, Heart, ArrowUpRight, Tag } from "lucide-react";
 import { Post } from "../data/posts";
 
 interface PostCardProps {
@@ -12,9 +11,6 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, darkMode, index = 0, variant = "default" }: PostCardProps) {
-  const [liked, setLiked] = useState(false);
-  const [bookmarked, setBookmarked] = useState(false);
-  const [likeCount] = useState(Math.floor(Math.random() * 80) + 12);
   const dm = darkMode;
 
   if (variant === "featured") {
@@ -74,32 +70,9 @@ export function PostCard({ post, darkMode, index = 0, variant = "default" }: Pos
               </span>
             ))}
           </div>
-          <div className="flex items-center gap-2">
-            <motion.button
-              whileTap={{ scale: 0.8 }}
-              onClick={(e) => { e.preventDefault(); setLiked(!liked); }}
-              className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors ${
-                liked
-                  ? "text-rose-500"
-                  : dm ? "text-gray-500 hover:text-rose-400" : "text-gray-400 hover:text-rose-500"
-              }`}
-            >
-              <motion.div animate={{ scale: liked ? [1, 1.4, 1] : 1 }} transition={{ duration: 0.3 }}>
-                <Heart size={12} fill={liked ? "currentColor" : "none"} />
-              </motion.div>
-              <span>{likeCount + (liked ? 1 : 0)}</span>
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.8 }}
-              onClick={(e) => { e.preventDefault(); setBookmarked(!bookmarked); }}
-              className={`p-1 rounded-lg transition-colors ${
-                bookmarked
-                  ? "text-indigo-500"
-                  : dm ? "text-gray-500 hover:text-indigo-400" : "text-gray-400 hover:text-indigo-500"
-              }`}
-            >
-              <Bookmark size={12} fill={bookmarked ? "currentColor" : "none"} />
-            </motion.button>
+          <div className={`flex items-center gap-1 text-xs px-2 py-1 ${dm ? "text-gray-500" : "text-gray-400"}`}>
+            <Heart size={12} />
+            <span>{post.likeCount ?? 0}</span>
           </div>
         </div>
       </motion.article>
@@ -198,28 +171,9 @@ export function PostCard({ post, darkMode, index = 0, variant = "default" }: Pos
         >
           <ArrowUpRight size={14} className={dm ? "text-gray-400" : "text-gray-500"} />
         </motion.div>
-        <div className="flex flex-col items-end gap-2">
-          <motion.button
-            whileTap={{ scale: 0.8 }}
-            onClick={() => setLiked(!liked)}
-            className={`flex items-center gap-1 text-xs transition-colors ${
-              liked ? "text-rose-500" : dm ? "text-gray-600 hover:text-rose-400" : "text-gray-400 hover:text-rose-500"
-            }`}
-          >
-            <motion.div animate={{ scale: liked ? [1, 1.4, 1] : 1 }} transition={{ duration: 0.3 }}>
-              <Heart size={12} fill={liked ? "currentColor" : "none"} />
-            </motion.div>
-            <span>{likeCount + (liked ? 1 : 0)}</span>
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.8 }}
-            onClick={() => setBookmarked(!bookmarked)}
-            className={`transition-colors ${
-              bookmarked ? "text-indigo-500" : dm ? "text-gray-600 hover:text-indigo-400" : "text-gray-400 hover:text-indigo-500"
-            }`}
-          >
-            <Bookmark size={12} fill={bookmarked ? "currentColor" : "none"} />
-          </motion.button>
+        <div className={`flex items-center gap-1 text-xs ${dm ? "text-gray-600" : "text-gray-400"}`}>
+          <Heart size={12} />
+          <span>{post.likeCount ?? 0}</span>
         </div>
       </div>
     </motion.article>

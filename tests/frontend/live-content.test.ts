@@ -58,10 +58,17 @@ test("sends an authenticated same-origin preview request", async () => {
     assert.deepEqual(JSON.parse(String(init?.body)), { docUrl: post.feishuDocUrl });
     return Response.json({
       success: true,
-      data: { markdown: "preview", revisionId: "10", title: "Title" },
+      data: {
+        markdown: "preview",
+        revisionId: "10",
+        title: "Title",
+        coverImage: "/api/feishu-media?token=image-token&type=image&sig=signed",
+      },
     });
   });
   assert.equal(result.markdown, "preview");
+  assert.equal(result.title, "Title");
+  assert.equal(result.coverImage, "/api/feishu-media?token=image-token&type=image&sig=signed");
 });
 
 test("surfaces API error messages to the admin", async () => {

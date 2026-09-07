@@ -1,7 +1,10 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router";
+import { useState, useEffect, useRef } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { Moon, Sun, Search, Menu, X, Feather, FlaskConical } from "lucide-react";
+import { Moon, Sun, Search, Menu, X, FilePenLine, FlaskConical, Bookmark } from "lucide-react";
+import { OctopusAvatar } from "./OctopusAvatar";
+import { useAdminAuth } from "../context/AdminAuthContext";
+import { createAdminLoginGesture, safeAdminReturnPath } from "../auth/adminSession";
 
 interface NavbarProps {
   darkMode: boolean;
@@ -13,6 +16,11 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const auth = useAdminAuth();
+  const isAdmin = auth.isAdmin && !auth.checking && !auth.signingOut;
+  const [authError, setAuthError] = useState("");
+  const loginGesture = useRef(createAdminLoginGesture());
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -22,14 +30,36 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
 
   useEffect(() => {
     setMenuOpen(false);
+    setAuthError("");
+    loginGesture.current = createAdminLoginGesture();
   }, [location]);
+
+  useEffect(() => { loginGesture.current = createAdminLoginGesture(); }, [isAdmin]);
+
+  const handleIdentityClick = async () => {
+    if (auth.checking || auth.signingOut) return;
+    if (isAdmin) {
+      if (!window.confirm("退出管理员模式？")) return;
+      setAuthError("");
+      try { await auth.signOut(); }
+      catch (error) { setAuthError(error instanceof Error ? error.message : "退出失败，请稍后重试。"); }
+      return;
+    }
+    if (loginGesture.current(performance.now())) {
+      const next = safeAdminReturnPath(location.pathname + location.search + location.hash);
+      navigate(`/admin/login?next=${encodeURIComponent(next)}`);
+    }
+  };
 
   const navLinks: Array<{ href: string; label: string; icon?: typeof FlaskConical }> = [
     { href: "/", label: "首页" },
     { href: "/blog", label: "文章" },
+    { href: "/collections", label: "收藏", icon: Bookmark },
     { href: "/lab", label: "实验室", icon: FlaskConical },
     { href: "/about", label: "关于" },
   ];
+  if (isAdmin) navLinks.push({ href: "/admin/articles", label: "文章管理", icon: FilePenLine });
+  if (isAdmin) navLinks.push({ href: "/admin/bookmarks", label: "收藏管理", icon: Bookmark });
 
   const isActive = (href: string) => {
     if (href === "/") return location.pathname === "/";
@@ -51,29 +81,34 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
       >
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <motion.div
-              whileHover={{ rotate: 15, scale: 1.1 }}
+          <div className="relative flex shrink-0 items-center gap-2">
+            <motion.button
+              type="button"
+              aria-label={isAdmin ? "退出管理员模式" : "Octopus"}
+              title={isAdmin ? "管理员模式 · 点击退出" : "Octopus"}
+              disabled={auth.checking || auth.signingOut}
+              onClick={handleIdentityClick}
+              whileHover={{ y: -1, scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400 }}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center ${darkMode ? "bg-indigo-500" : "bg-indigo-600"
-                }`}
+              className="rounded-lg touch-manipulation select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-500 disabled:cursor-wait"
             >
-              <Feather size={16} className="text-white" />
-            </motion.div>
-            <span className={`tracking-tight ${darkMode ? "text-white" : "text-gray-900"}`}>
+              <OctopusAvatar avatarId={isAdmin ? "focused" : "everyday"} administrator={isAdmin} className="w-9 h-9 rounded-lg" />
+            </motion.button>
+            <Link to="/" aria-label="返回首页" className={`tracking-tight ${darkMode ? "text-white" : "text-gray-900"}`}>
               <span className="opacity-60">by</span>{" "}
               <span className="font-semibold">Octopus</span>
-            </span>
-          </Link>
+            </Link>
+            {authError && <p role="alert" className={`absolute left-0 top-full mt-3 w-64 rounded-xl border p-3 text-xs text-rose-500 shadow-lg ${darkMode ? "border-white/10 bg-gray-900" : "border-gray-200 bg-white"}`}>{authError}</p>}
+          </div>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav aria-label="主导航" className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link key={link.href} to={link.href}>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  className={`relative px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-1.5 ${isActive(link.href)
+                  className={`relative px-2.5 py-2 rounded-lg text-sm transition-colors flex items-center gap-1.5 ${isActive(link.href)
                       ? darkMode
                         ? "text-white"
                         : "text-gray-900"
@@ -166,7 +201,10 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setMenuOpen(!menuOpen)}
-              className={`md:hidden p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-white/10 text-gray-300" : "hover:bg-gray-100 text-gray-600"
+              aria-label={menuOpen ? "关闭菜单" : "打开菜单"}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-navigation"
+              className={`lg:hidden p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-white/10 text-gray-300" : "hover:bg-gray-100 text-gray-600"
                 }`}
             >
               <AnimatePresence mode="wait">
@@ -193,12 +231,12 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className={`fixed top-16 left-0 right-0 z-40 md:hidden border-b ${darkMode
+            className={`fixed top-16 left-0 right-0 z-40 lg:hidden border-b ${darkMode
                 ? "bg-gray-950/95 backdrop-blur-xl border-white/5"
                 : "bg-white/95 backdrop-blur-xl border-black/5"
               }`}
           >
-            <nav className="px-6 py-4 flex flex-col gap-1">
+            <nav id="mobile-navigation" aria-label="移动导航" className="px-6 py-4 flex flex-col gap-1">
               {navLinks.map((link, i) => (
                 <motion.div
                   key={link.href}

@@ -4,4 +4,12 @@
   import "./styles/index.css";
 
   createRoot(document.getElementById("root")!).render(<App />);
-  
+
+  if ("serviceWorker" in navigator && import.meta.env.PROD) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/collector-sw.js").catch(() => {
+        // A failed PWA setup must not prevent normal website and paste-based use.
+      });
+    });
+  }
+

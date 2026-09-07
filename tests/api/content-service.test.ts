@@ -28,7 +28,7 @@ test("returns live Markdown and persists a fresh snapshot", async () => {
   const updates: unknown[] = [];
   const result = await getPublicArticleContent("hello", {
     gateway: gateway({ updateArticleSnapshot: async (_id, update) => { updates.push(update); } }),
-    fetchMarkdown: async () => ({ markdown: "live markdown", revisionId: "new", title: "Live" }),
+    fetchMarkdown: async () => ({ markdown: "live markdown", revisionId: "new", title: "Live", coverImage: null }),
     now: () => new Date("2026-08-28T01:02:03.000Z"),
   });
 
@@ -88,7 +88,7 @@ test("does not contact Feishu for ordinary snapshot articles", async () => {
     }),
     fetchMarkdown: async () => {
       fetchCount += 1;
-      return { markdown: "unexpected", revisionId: "1", title: "Unexpected" };
+      return { markdown: "unexpected", revisionId: "1", title: "Unexpected", coverImage: null };
     },
   });
   assert.equal(fetchCount, 0);
@@ -104,7 +104,7 @@ test("checks admin authorization before previewing a document", async () => {
       gateway: gateway({ isAdminAccessToken: async () => false }),
       fetchMarkdown: async () => {
         fetchCount += 1;
-        return { markdown: "content", revisionId: "1", title: "Title" };
+        return { markdown: "content", revisionId: "1", title: "Title", coverImage: null };
       },
     }),
     (error: unknown) => error instanceof ContentServiceError && error.code === "ADMIN_REQUIRED",

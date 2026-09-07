@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
+import { createTabSessionStorage, type UserRoleState } from "../auth/adminSession";
 import type { Post } from "../data/posts";
+import { resolveAuthorAvatar } from "./articleAuthor";
 import { posts as staticPosts } from "../data/posts";
 import type { Demo } from "../data/demos";
 import { demos as staticDemos } from "../data/demos";
@@ -8,8 +10,23 @@ import {
   previewFeishuDocument,
   type FeishuPreview,
 } from "./liveContent";
+import {
+  resolveArticleCover,
+  validateFeishuArticleInput,
+  type FeishuArticleWriteInput,
+} from "./articleWrite";
+import {
+  formatArticleDateTime,
+  normalizeCommentAuthor,
+  normalizeCommentContent,
+  parseArticleLikeState,
+  type ArticleComment,
+  type ArticleLikeState,
+} from "./articleInteractions";
 
 type ArticleRow = {
+  author_name?: string | null;
+  author_avatar?: string | null;
   id: string | number;
   slug: string;
   title: string;
@@ -20,6 +37,7 @@ type ArticleRow = {
   tags?: string[] | null;
   category?: string | null;
   read_time?: number | null;
+  like_count?: number | null;
   featured?: boolean | null;
   published_at?: string | null;
   updated_at?: string | null;
@@ -28,6 +46,14 @@ type ArticleRow = {
   feishu_doc_url?: string | null;
   feishu_revision_id?: string | null;
   feishu_synced_at?: string | null;
+};
+
+type ArticleCommentRow = {
+  id: string | number;
+  article_id: string | number;
+  author_name?: string | null;
+  content?: string | null;
+  created_at?: string | null;
 };
 
 type DemoRow = {
@@ -51,7 +77,7 @@ const DEFAULT_COVER =
   "https://images.unsplash.com/photo-1499750310107-5fef28a66643?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
 
 const ARTICLE_SELECT_FIELDS =
-  "id,slug,title,summary,content,content_md,cover_image,tags,category,read_time,featured,published_at,updated_at,status,deleted_at,feishu_doc_url,feishu_revision_id,feishu_synced_at";
+  "id,slug,title,summary,content,content_md,cover_image,tags,category,read_time,like_count,featured,published_at,updated_at,status,deleted_at,feishu_doc_url,feishu_revision_id,feishu_synced_at,author_name,author_avatar";
 
 const contentSource = (import.meta.env.VITE_CONTENT_SOURCE ?? "auto").toLowerCase();
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -66,15 +92,9 @@ const shouldReadFromDatabase =
 const supabase =
   hasSupabaseConfig && supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false },
+      auth: { persistSession: true, storage: createTabSessionStorage() },
     })
     : null;
-
-type UserRoleState = {
-  authenticated: boolean;
-  isAdmin: boolean;
-  userId: string | null;
-};
 
 type WriteResult<T = null> =
   | { ok: true; data: T }
@@ -83,19 +103,6 @@ type WriteResult<T = null> =
 type ArticleFeaturedUpdate = {
   id: string;
   featured: boolean;
-};
-
-type ArticleWriteInput = {
-  title: string;
-  slug: string;
-  excerpt: string;
-  content: string;
-  category: string;
-  tags: string[];
-  coverImage?: string;
-  feishuDocUrl?: string;
-  feishuRevisionId?: string;
-  feishuSyncedAt?: string;
 };
 
 function estimateReadTime(content: string): number {
@@ -107,8 +114,11 @@ function estimateReadTime(content: string): number {
 
 function normalizeArticle(row: ArticleRow): Post {
   const content = row.content || row.content_md || "";
+  const articleDate = row.published_at ?? row.updated_at ?? new Date().toISOString().slice(0, 10);
   return {
     id: String(row.id ?? row.slug),
+    authorName: row.author_name?.trim() || undefined,
+    authorAvatar: resolveAuthorAvatar(row.author_avatar).id,
     slug: row.slug,
     title: row.title,
     excerpt: row.summary ?? "",
@@ -116,13 +126,24 @@ function normalizeArticle(row: ArticleRow): Post {
     coverImage: row.cover_image ?? DEFAULT_COVER,
     tags: row.tags ?? [],
     category: row.category ?? "未分类",
-    date: row.published_at ?? row.updated_at ?? new Date().toISOString().slice(0, 10),
+    date: formatArticleDateTime(articleDate),
     readTime: row.read_time ?? estimateReadTime(content),
+    likeCount: Math.max(0, Number(row.like_count ?? 0)),
     featured: Boolean(row.featured),
     status: row.status === "draft" ? "draft" : "published",
     feishuDocUrl: row.feishu_doc_url ?? undefined,
     feishuRevisionId: row.feishu_revision_id ?? undefined,
     feishuSyncedAt: row.feishu_synced_at ?? undefined,
+  };
+}
+
+function normalizeArticleComment(row: ArticleCommentRow): ArticleComment {
+  return {
+    id: String(row.id),
+    articleId: String(row.article_id),
+    authorName: normalizeCommentAuthor(row.author_name ?? ""),
+    content: normalizeCommentContent(row.content ?? ""),
+    createdAt: row.created_at ?? "",
   };
 }
 
@@ -145,13 +166,6 @@ function mapWriteError(error: unknown): string {
     return "网络异常，请检查连接后重试。";
   }
   return message || "操作失败，请稍后重试。";
-}
-
-function validateArticleInput(input: ArticleWriteInput): string | null {
-  if (!input.title.trim()) return "标题不能为空。";
-  if (!input.slug.trim()) return "Slug 不能为空。";
-  if (!input.content.trim()) return "正文不能为空。";
-  return null;
 }
 
 export function getSupabaseClient() {
@@ -181,7 +195,8 @@ export async function getUserRoleState(): Promise<UserRoleState> {
 
 export async function signOutAdmin(): Promise<void> {
   if (!supabase) return;
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut({ scope: "local" });
+  if (error) throw new Error(error.message || "退出登录失败，请重试。");
 }
 
 function normalizeDemo(row: DemoRow): Demo {
@@ -252,6 +267,108 @@ export async function getArticleBySlug(slug: string): Promise<Post | null> {
     return await fetchLiveArticleContent(snapshot);
   } catch {
     return snapshot;
+  }
+}
+
+export async function getArticleLikeState(
+  articleId: string,
+  visitorId: string,
+  fallbackLikeCount = 0,
+): Promise<WriteResult<ArticleLikeState>> {
+  if (!supabase) {
+    return {
+      ok: true,
+      data: { likeCount: Math.max(0, fallbackLikeCount), liked: false },
+    };
+  }
+
+  const { data, error } = await supabase.rpc("get_article_like_state", {
+    p_article_id: articleId,
+    p_visitor_id: visitorId,
+  });
+  if (error) return { ok: false, error: mapWriteError(error) };
+  return { ok: true, data: parseArticleLikeState(data, fallbackLikeCount) };
+}
+
+export async function setArticleLiked(
+  articleId: string,
+  visitorId: string,
+  liked: boolean,
+): Promise<WriteResult<ArticleLikeState>> {
+  if (!supabase) return { ok: false, error: "Supabase 未配置，暂时无法点赞。" };
+
+  const { data, error } = await supabase.rpc("set_article_like", {
+    p_article_id: articleId,
+    p_visitor_id: visitorId,
+    p_liked: liked,
+  });
+  if (error) return { ok: false, error: mapWriteError(error) };
+  return { ok: true, data: parseArticleLikeState(data) };
+}
+
+export async function listArticleComments(
+  articleId: string,
+): Promise<WriteResult<ArticleComment[]>> {
+  if (!supabase) return { ok: true, data: [] };
+
+  const { data, error } = await supabase
+    .from("article_comments")
+    .select("id,article_id,author_name,content,created_at")
+    .eq("article_id", articleId)
+    .order("created_at", { ascending: false });
+  if (error) return { ok: false, error: mapWriteError(error) };
+  return { ok: true, data: ((data ?? []) as ArticleCommentRow[]).map(normalizeArticleComment) };
+}
+
+export async function createArticleComment(
+  articleId: string,
+  authorName: string,
+  content: string,
+): Promise<WriteResult<ArticleComment>> {
+  const normalizedContent = normalizeCommentContent(content);
+  if (!normalizedContent) return { ok: false, error: "评论内容不能为空。" };
+  if (!supabase) return { ok: false, error: "Supabase 未配置，暂时无法发布评论。" };
+
+  const { data, error } = await supabase
+    .from("article_comments")
+    .insert({
+      article_id: articleId,
+      author_name: normalizeCommentAuthor(authorName),
+      content: normalizedContent,
+    })
+    .select("id,article_id,author_name,content,created_at")
+    .maybeSingle();
+  if (error) return { ok: false, error: mapWriteError(error) };
+  if (!data) return { ok: false, error: "评论发布失败，请稍后重试。" };
+  return { ok: true, data: normalizeArticleComment(data as ArticleCommentRow) };
+}
+
+export async function deleteArticleComment(
+  articleId: string,
+  commentId: string,
+): Promise<WriteResult<{ id: string }>> {
+  if (!supabase) return { ok: false, error: "Supabase 未配置，暂时无法删除评论。" };
+
+  try {
+    const roleState = await getUserRoleState();
+    if (!roleState.authenticated || !roleState.isAdmin) {
+      return { ok: false, error: "仅管理员可以删除评论。" };
+    }
+
+    // RLS is authoritative; UI/auth checks alone cannot authorize a deletion.
+    const { data, error } = await supabase
+      .from("article_comments")
+      .delete()
+      .eq("id", commentId)
+      .eq("article_id", articleId)
+      .select("id")
+      .maybeSingle();
+
+    if (error) return { ok: false, error: mapWriteError(error) };
+    if (!data) return { ok: false, error: "评论不存在、已被删除或无权限删除，请刷新后重试。" };
+    return { ok: true, data: { id: String(data.id) } };
+  } catch (error) {
+    return { ok: false, error: mapWriteError(error) };
   }
 }
 
@@ -351,28 +468,31 @@ async function ensureUniqueSlug(slug: string, excludeId?: string): Promise<Write
   return { ok: true, data: null };
 }
 
-function toArticleRowPayload(input: ArticleWriteInput, userId: string | null) {
+function toArticleRowPayload(input: FeishuArticleWriteInput, userId: string | null) {
   const now = new Date().toISOString();
+  const coverImage = resolveArticleCover(input.coverImage, input.feishuCoverImage);
   return {
     title: input.title.trim(),
+    author_name: input.authorName?.trim() || null,
+    author_avatar: resolveAuthorAvatar(input.authorAvatar).id,
     slug: normalizeSlug(input.slug),
     summary: input.excerpt.trim(),
-    content: input.content,
-    content_md: input.content,
+    content: input.contentSnapshot,
+    content_md: input.contentSnapshot,
     category: input.category.trim() || "未分类",
     tags: input.tags,
-    cover_image: input.coverImage?.trim() || null,
-    feishu_doc_url: input.feishuDocUrl?.trim() || null,
-    feishu_revision_id: input.feishuDocUrl?.trim() ? input.feishuRevisionId?.trim() || null : null,
-    feishu_synced_at: input.feishuDocUrl?.trim() ? input.feishuSyncedAt?.trim() || null : null,
-    read_time: estimateReadTime(input.content),
+    cover_image: coverImage ?? null,
+    feishu_doc_url: input.feishuDocUrl.trim(),
+    feishu_revision_id: input.feishuRevisionId?.trim() || null,
+    feishu_synced_at: input.feishuSyncedAt?.trim() || null,
+    read_time: estimateReadTime(input.contentSnapshot),
     updated_at: now,
     updated_by: userId,
   };
 }
 
-export async function createArticle(input: ArticleWriteInput): Promise<WriteResult<null>> {
-  const validation = validateArticleInput(input);
+export async function createArticle(input: FeishuArticleWriteInput): Promise<WriteResult<null>> {
+  const validation = validateFeishuArticleInput(input);
   if (validation) return { ok: false, error: validation };
   if (!supabase) return { ok: false, error: "Supabase 未配置。" };
 
@@ -396,8 +516,8 @@ export async function createArticle(input: ArticleWriteInput): Promise<WriteResu
   return { ok: true, data: null };
 }
 
-export async function updateArticle(id: string, input: ArticleWriteInput): Promise<WriteResult<null>> {
-  const validation = validateArticleInput(input);
+export async function updateArticle(id: string, input: FeishuArticleWriteInput): Promise<WriteResult<null>> {
+  const validation = validateFeishuArticleInput(input);
   if (validation) return { ok: false, error: validation };
   if (!supabase) return { ok: false, error: "Supabase 未配置。" };
 

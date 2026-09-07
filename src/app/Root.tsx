@@ -10,6 +10,10 @@ import { About } from "./pages/About";
 import { Lab } from "./pages/Lab";
 import { AdminArticles } from "./pages/AdminArticles";
 import { AdminLogin } from "./pages/AdminLogin";
+import { Collections } from "./pages/Collections";
+import { Collect } from "./pages/Collect";
+import { AdminBookmarks } from "./pages/AdminBookmarks";
+import { CollectorSetup } from "./pages/CollectorSetup";
 import { useBlog } from "./context/BlogContext";
 
 function PageContent() {
@@ -24,6 +28,10 @@ function PageContent() {
   if (path === "/lab") return <Lab darkMode={darkMode} />;
   if (path === "/admin/login") return <AdminLogin darkMode={darkMode} />;
   if (path === "/admin/articles") return <AdminArticles darkMode={darkMode} />;
+  if (path === "/collections" || /^\/collections\/[^/]+$/.test(path)) return <Collections darkMode={darkMode} />;
+  if (path === "/collect") return <Collect darkMode={darkMode} />;
+  if (path === "/collect/setup") return <CollectorSetup darkMode={darkMode} />;
+  if (path === "/admin/bookmarks") return <AdminBookmarks darkMode={darkMode} />;
   return (
     <div className={`min-h-screen flex items-center justify-center pt-24 ${darkMode ? "bg-gray-950 text-white" : "bg-white text-gray-900"}`}>
       <div className="text-center">

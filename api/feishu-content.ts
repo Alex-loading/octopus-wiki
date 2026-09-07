@@ -95,6 +95,7 @@ function getRuntimeHandlers(): ReturnType<typeof createFeishuContentHandlers> {
         markdown: converted.markdown,
         revisionId: document.revisionId,
         title: document.title,
+        coverImage: converted.coverImage,
       };
     },
   });

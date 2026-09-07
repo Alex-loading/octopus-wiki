@@ -1,7 +1,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Mail, Shield, ArrowLeft } from "lucide-react";
-import { getSupabaseClient, getUserRoleState } from "../content/repository";
+import { getSupabaseClient } from "../content/repository";
+import { useAdminAuth } from "../context/AdminAuthContext";
+import { safeAdminReturnPath } from "../auth/adminSession";
 
 interface AdminLoginProps {
   darkMode: boolean;
@@ -11,23 +13,21 @@ export function AdminLogin({ darkMode }: AdminLoginProps) {
   const dm = darkMode;
   const navigate = useNavigate();
   const location = useLocation();
+  const auth = useAdminAuth();
+  const next = safeAdminReturnPath(new URLSearchParams(location.search).get("next"));
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const init = async () => {
-      const roleState = await getUserRoleState();
-      if (roleState.authenticated && roleState.isAdmin) {
-        navigate("/admin/articles", { replace: true });
-      }
-    };
-    void init();
-  }, [navigate]);
+    // The exiting page remains mounted during route animations; redirect once.
+    if (location.pathname === "/admin/login" && !auth.checking && auth.isAdmin) navigate(next, { replace: true });
+  }, [auth.checking, auth.isAdmin, location.pathname, navigate, next]);
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
+    if (loading || auth.checking || auth.authenticated) return;
     setError("");
     setMessage("");
 
@@ -43,23 +43,21 @@ export function AdminLogin({ darkMode }: AdminLoginProps) {
     }
 
     setLoading(true);
-    const next = new URLSearchParams(location.search).get("next") || "/admin/articles";
-
-    const { error: signInError } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}${next}`,
-      },
-    });
-
-    setLoading(false);
-
-    if (signInError) {
-      setError(signInError.message);
-      return;
+    try {
+      const { error: signInError } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}/admin/login?next=${encodeURIComponent(next)}`,
+        },
+      });
+      if (signInError) throw signInError;
+      setMessage("登录链接已发送到邮箱，验证成功后将返回原页面。同一标签页刷新会保持登录。");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "登录链接发送失败，请稍后重试。");
+    } finally {
+      setLoading(false);
     }
-
-    setMessage("登录链接已发送到邮箱，请完成验证后返回后台。");
   };
 
   return (
@@ -76,10 +74,21 @@ export function AdminLogin({ darkMode }: AdminLoginProps) {
           <p className={`text-sm mb-2 ${dm ? "text-indigo-400" : "text-indigo-600"}`}>管理后台</p>
           <h1 className={`text-2xl font-light mb-3 ${dm ? "text-white" : "text-gray-900"}`}>管理员登录</h1>
           <p className={`text-sm mb-6 ${dm ? "text-gray-400" : "text-gray-500"}`}>
-            使用管理员邮箱接收魔法链接登录，仅管理员角色可访问文章管理页面。
+            使用管理员邮箱接收魔法链接登录，仅管理员角色可管理文章和收藏。
           </p>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          {auth.checking && <p role="status" className="mb-4 text-sm text-gray-500">正在确认登录状态...</p>}
+          {!auth.checking && auth.authenticated && !auth.isAdmin && (
+            <div className="space-y-3">
+              <p role="alert" className="text-sm text-rose-500">当前账号不是管理员，请切换管理员账号。</p>
+              <button type="button" className="text-sm underline" onClick={async () => {
+                setError("");
+                try { await auth.signOut(); }
+                catch (error) { setError(error instanceof Error ? error.message : "退出失败，请重试。"); }
+              }}>退出当前账号</button>
+            </div>
+          )}
+          <form onSubmit={handleLogin} className="space-y-4" hidden={auth.checking || auth.authenticated}>
             <label className="block">
               <span className={`text-xs mb-1.5 block ${dm ? "text-gray-400" : "text-gray-500"}`}>邮箱</span>
               <div className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${dm ? "border-white/10 bg-gray-950" : "border-gray-200 bg-gray-50"}`}>
@@ -93,9 +102,6 @@ export function AdminLogin({ darkMode }: AdminLoginProps) {
                 />
               </div>
             </label>
-
-            {error && <p className="text-sm text-rose-500">{error}</p>}
-            {message && <p className="text-sm text-emerald-500">{message}</p>}
 
             <button
               type="submit"
@@ -112,6 +118,8 @@ export function AdminLogin({ darkMode }: AdminLoginProps) {
               {loading ? "发送中..." : "发送登录链接"}
             </button>
           </form>
+          {error && <p role="alert" className="mt-3 text-sm text-rose-500">{error}</p>}
+          {message && <p role="status" className="mt-3 text-sm text-emerald-500">{message}</p>}
 
           <div className={`mt-5 pt-4 border-t text-xs flex items-center gap-2 ${dm ? "border-white/10 text-gray-500" : "border-gray-100 text-gray-400"}`}>
             <Shield size={12} /> 角色来源：`app_metadata.role=admin` 或 `app_metadata.is_admin=true`

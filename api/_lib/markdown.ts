@@ -19,6 +19,7 @@ type RendererMedia = {
 export type MarkdownConversionResult = {
   markdown: string;
   media: RendererMedia[];
+  coverImage: string | null;
 };
 
 function unsupportedPlaceholder(block: FeishuBlock): FeishuBlock {
@@ -80,9 +81,13 @@ export function convertFeishuDocumentToMarkdown(
   });
   const markdown = renderer.parse();
   const media = Object.values(renderer.fileTokens) as RendererMedia[];
+  const coverMedia = media.find((item) => item.type === "image" || item.type === "board");
 
   return {
     markdown: rewriteMedia(markdown, media, mediaSigningSecret).trim(),
     media,
+    coverImage: coverMedia
+      ? buildSignedMediaUrl(coverMedia.token, coverMedia.type, mediaSigningSecret)
+      : null,
   };
 }

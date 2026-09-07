@@ -13,6 +13,9 @@
 
   - Login route: `/admin/login`
   - Article management route: `/admin/articles`
+  - Click the pixel octopus five times within two seconds to open the login page. The brand text still links home.
+  - Verified administrators see a crowned octopus and an **文章管理** link in desktop/mobile navigation. Click the crowned icon and confirm to sign out of the current session.
+  - Auth state is shared by navigation, article management and comment deletion. Same-tab reloads retain the session via `sessionStorage`; blocked storage falls back to memory. No admin session is stored in `localStorage`.
   - Admin role source (Supabase JWT app metadata):
     - `role = "admin"`, or
     - `is_admin = true`
@@ -21,6 +24,33 @@
 
   - `npm run db:init`
   - `npm run db:verify`
+
+  In Supabase **Authentication → URL Configuration**, set **Site URL** to `https://octopus-wiki.vercel.app`. Add `https://octopus-wiki.vercel.app/admin/login**` to **Redirect URLs** and retain `http://localhost:3000/admin/login**` for local Vercel development (use your real Vite port when testing Vite alone). The suffix covers the `next` query parameter. The login page sets `emailRedirectTo` to the current origin's `/admin/login?next=...`; Supabase falls back to Site URL if that address is not allowed. See [Supabase redirect configuration](https://supabase.com/docs/guides/auth/redirect-urls).
+
+  Keep the Magic Link email's login anchor on `{{ .ConfirmationURL }}` so Supabase verifies the token before redirecting. Do not hard-code localhost or replace the verification link with a plain site URL. Request a new email from the production site after correcting configuration; existing emails retain their old destination. [Supabase email templates](https://supabase.com/docs/guides/auth/auth-email-templates).
+  Login emails return to `/admin/login?next=...`; the app validates the session and returns to the requested same-site page. Unknown/external return paths fall back to `/admin/articles`. Login does not auto-create accounts: use an existing administrator user. The hidden entry is not an access-control mechanism; repository, server and RLS authorization checks remain in place.
+  This navigation/session update requires no new database migration (comment deletion still requires migration `005`).
+
+  ## Cross-platform bookmark library
+
+  Public bookmarks live at `/collections`; administrators use `/collect` to save links and
+  `/admin/bookmarks` to manage resources and collection boxes. Apply
+  `database/migrations/007_bookmarks.sql` and `008_bookmark_capture_devices.sql` before using these pages. Both the collection and its
+  resource must be public to appear on the public site. Duplicate links are rejected and
+  nonempty collections cannot be deleted.
+
+  `/collect/setup` provides a desktop bookmarklet, Android PWA installation/share instructions,
+  and an iOS Shortcuts integration recipe. Copy/paste works across devices. The metadata preview
+  API reuses the server-only Supabase variables; unsupported or blocked previews can be filled
+  manually. Full content backup and synchronization with platform-native favorites are not included.
+
+  Enable 90-day device authorization once at `/collect/setup` to collect from new windows
+  without repeating administrator login. Existing bookmarklets keep working. The scoped
+  `/api/collector` uses server-only Supabase variables and supports revocation; editing and
+  deletion continue to require administrator login.
+
+  See [bookmark setup and deployment](docs/plans/2026-09-07-bookmark-library.md) for configuration,
+  testing, mobile compatibility and session limitations.
 
   ## Feishu live article content
 

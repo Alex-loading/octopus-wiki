@@ -23,6 +23,7 @@ export type FetchedMarkdown = {
   markdown: string;
   revisionId: string;
   title: string;
+  coverImage: string | null;
 };
 
 type ContentServiceDependencies = {

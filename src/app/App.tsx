@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { Root } from "./Root";
 import { BlogProvider } from "./context/BlogContext";
+import { AdminAuthProvider } from "./context/AdminAuthContext";
 
 const router = createBrowserRouter([
   {
@@ -11,8 +12,10 @@ const router = createBrowserRouter([
 
 export default function App() {
   return (
-    <BlogProvider>
-      <RouterProvider router={router} />
-    </BlogProvider>
+    <AdminAuthProvider>
+      <BlogProvider>
+        <RouterProvider router={router} />
+      </BlogProvider>
+    </AdminAuthProvider>
   );
 }

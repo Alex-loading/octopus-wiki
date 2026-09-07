@@ -1,4 +1,6 @@
 export interface Post {
+  authorName?: string;
+  authorAvatar?: string;
   id: string;
   slug: string;
   title: string;
@@ -9,6 +11,7 @@ export interface Post {
   category: string;
   date: string;
   readTime: number;
+  likeCount?: number;
   featured?: boolean;
   status?: "draft" | "published";
   feishuDocUrl?: string;

@@ -22,7 +22,7 @@ const gateway: ArticleContentGateway = {
 test("content GET validates slug and applies short public CDN caching", async () => {
   const handlers = createFeishuContentHandlers({
     gateway,
-    fetchMarkdown: async () => ({ markdown: "live", revisionId: "2", title: "Title" }),
+    fetchMarkdown: async () => ({ markdown: "live", revisionId: "2", title: "Title", coverImage: null }),
   });
 
   const invalid = await handlers.GET(new Request("https://example.com/api/feishu-content"));
@@ -39,7 +39,12 @@ test("content GET validates slug and applies short public CDN caching", async ()
 test("content POST requires an admin bearer token and is never cached", async () => {
   const handlers = createFeishuContentHandlers({
     gateway,
-    fetchMarkdown: async () => ({ markdown: "preview", revisionId: "3", title: "Title" }),
+    fetchMarkdown: async () => ({
+      markdown: "preview",
+      revisionId: "3",
+      title: "Title",
+      coverImage: "/api/feishu-media?token=image-token&type=image&sig=signed",
+    }),
   });
   const requestBody = JSON.stringify({ docUrl: "https://tenant.feishu.cn/docx/DocToken123" });
 
@@ -59,6 +64,8 @@ test("content POST requires an admin bearer token and is never cached", async ()
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("Cache-Control"), "no-store");
   assert.equal(body.data.markdown, "preview");
+  assert.equal(body.data.title, "Title");
+  assert.equal(body.data.coverImage, "/api/feishu-media?token=image-token&type=image&sig=signed");
 });
 
 test("media GET rejects a tampered signature and streams authorized media", async () => {

@@ -9,36 +9,44 @@ import {
   deleteArticle,
   publishArticle,
   setArticleFeatured,
-  getUserRoleState,
-  signOutAdmin,
   syncFeishuDocument,
 } from "../content/repository";
+import { resolveArticleCover } from "../content/articleWrite";
+import { DEFAULT_AUTHOR_AVATAR } from "../content/articleAuthor";
+import { ArticleAuthorFields } from "../components/ArticleAuthorFields";
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 interface AdminArticlesProps {
   darkMode: boolean;
 }
 
 interface ArticleFormState {
+  authorName: string;
+  authorAvatar: string;
   title: string;
   slug: string;
   excerpt: string;
-  content: string;
+  contentSnapshot: string;
   category: string;
   tags: string;
   coverImage: string;
+  feishuCoverImage: string;
   feishuDocUrl: string;
   feishuRevisionId: string;
   feishuSyncedAt: string;
 }
 
 const EMPTY_FORM: ArticleFormState = {
+  authorName: "",
+  authorAvatar: DEFAULT_AUTHOR_AVATAR,
   title: "",
   slug: "",
   excerpt: "",
-  content: "",
+  contentSnapshot: "",
   category: "技术",
   tags: "",
   coverImage: "",
+  feishuCoverImage: "",
   feishuDocUrl: "",
   feishuRevisionId: "",
   feishuSyncedAt: "",
@@ -46,13 +54,16 @@ const EMPTY_FORM: ArticleFormState = {
 
 function toFormValue(post: Post): ArticleFormState {
   return {
+    authorName: post.authorName ?? "",
+    authorAvatar: post.authorAvatar ?? DEFAULT_AUTHOR_AVATAR,
     title: post.title,
     slug: post.slug,
     excerpt: post.excerpt,
-    content: post.content,
+    contentSnapshot: post.content,
     category: post.category,
     tags: post.tags.join(","),
     coverImage: post.coverImage,
+    feishuCoverImage: "",
     feishuDocUrl: post.feishuDocUrl ?? "",
     feishuRevisionId: post.feishuRevisionId ?? "",
     feishuSyncedAt: post.feishuSyncedAt ?? "",
@@ -63,8 +74,8 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
   const dm = darkMode;
   const navigate = useNavigate();
 
-  const [checkingAccess, setCheckingAccess] = useState(true);
-  const [forbidden, setForbidden] = useState(false);
+  const { checking: checkingAccess, authenticated, isAdmin, signOut } = useAdminAuth();
+  const forbidden = !checkingAccess && authenticated && !isAdmin;
   const [articles, setArticles] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -79,6 +90,8 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
     () => articles.find((article) => article.id === editingId) ?? null,
     [articles, editingId]
   );
+  const resolvedCoverImage = resolveArticleCover(form.coverImage, form.feishuCoverImage);
+  const isFeishuReady = Boolean(form.feishuDocUrl.trim() && form.contentSnapshot.trim());
 
   const refreshArticles = async () => {
     setLoading(true);
@@ -94,24 +107,23 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
   };
 
   useEffect(() => {
-    const init = async () => {
-      const roleState = await getUserRoleState();
-      if (!roleState.authenticated) {
-        navigate("/admin/login?next=/admin/articles", { replace: true });
-        return;
-      }
-      if (!roleState.isAdmin) {
-        setForbidden(true);
-        setCheckingAccess(false);
-        return;
-      }
-
-      setCheckingAccess(false);
-      await refreshArticles();
-    };
-
-    void init();
-  }, [navigate]);
+    if (checkingAccess) return;
+    if (!authenticated) {
+      navigate("/admin/login?next=/admin/articles", { replace: true });
+      return;
+    }
+    if (!isAdmin) return;
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    void listAdminArticles().then(result => {
+      if (cancelled) return;
+      if (result.ok) setArticles(result.data); else setError(result.error);
+    }).catch(() => {
+      if (!cancelled) setError("加载文章失败，请稍后重试。");
+    }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [checkingAccess, authenticated, isAdmin, navigate]);
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -125,13 +137,16 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
     setNotice("");
 
     const payload = {
+      authorName: form.authorName,
+      authorAvatar: form.authorAvatar,
       title: form.title,
       slug: form.slug,
       excerpt: form.excerpt,
-      content: form.content,
+      contentSnapshot: form.contentSnapshot,
       category: form.category,
       tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
       coverImage: form.coverImage,
+      feishuCoverImage: form.feishuCoverImage,
       feishuDocUrl: form.feishuDocUrl,
       feishuRevisionId: form.feishuRevisionId,
       feishuSyncedAt: form.feishuSyncedAt,
@@ -219,10 +234,6 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
       return;
     }
 
-    if (form.content.trim() && !window.confirm("同步预览会覆盖当前正文，确认继续？")) {
-      return;
-    }
-
     setImportingFeishu(true);
     const result = await syncFeishuDocument(form.feishuDocUrl);
     setImportingFeishu(false);
@@ -234,14 +245,16 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
 
     setForm((prev) => ({
       ...prev,
-      content: result.data.markdown,
+      title: editingArticle ? prev.title : result.data.title,
+      contentSnapshot: result.data.markdown,
+      feishuCoverImage: result.data.coverImage ?? "",
       feishuRevisionId: result.data.revisionId,
       feishuSyncedAt: new Date().toISOString(),
     }));
-    setNotice(`飞书同步预览成功：${result.data.title}`);
+    setNotice(`已读取飞书文档：${result.data.title}`);
   };
 
-  if (checkingAccess) {
+  if (checkingAccess || !authenticated) {
     return (
       <div className={`min-h-screen pt-24 flex items-center justify-center ${dm ? "bg-gray-950 text-gray-400" : "bg-white text-gray-500"}`}>
         正在检查权限...
@@ -271,8 +284,8 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
           </div>
           <button
             onClick={async () => {
-              await signOutAdmin();
-              navigate("/admin/login", { replace: true });
+              try { await signOut(); navigate("/admin/login", { replace: true }); }
+              catch (error) { setError(error instanceof Error ? error.message : "退出登录失败，请重试。"); }
             }}
             className={`text-sm px-3 py-2 rounded-lg border ${dm ? "border-white/10 text-gray-300 hover:text-white" : "border-gray-200 text-gray-600 hover:text-gray-900"}`}
           >
@@ -291,15 +304,18 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
 
             <form className="space-y-3" onSubmit={handleSubmit}>
               <div className={`rounded-xl border p-3 space-y-2 ${dm ? "border-white/10 bg-gray-950" : "border-gray-200 bg-gray-50"}`}>
-                <span className={`text-xs ${dm ? "text-gray-400" : "text-gray-500"}`}>飞书实时内容</span>
+                <span className={`text-xs ${dm ? "text-gray-400" : "text-gray-500"}`}>文章内容来源</span>
 
                 <label className="block">
-                  <span className={`text-xs mb-1 block ${dm ? "text-gray-400" : "text-gray-500"}`}>飞书文档链接</span>
+                  <span className={`text-xs mb-1 block ${dm ? "text-gray-400" : "text-gray-500"}`}>飞书文档链接 *</span>
                   <input
+                    required
                     value={form.feishuDocUrl}
                     onChange={(event) => setForm((prev) => ({
                       ...prev,
                       feishuDocUrl: event.target.value,
+                      contentSnapshot: "",
+                      feishuCoverImage: "",
                       feishuRevisionId: "",
                       feishuSyncedAt: "",
                     }))}
@@ -309,34 +325,74 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
                 </label>
 
                 <p className={`text-xs ${dm ? "text-gray-500" : "text-gray-500"}`}>
-                  凭证由服务端管理；保存链接后，文章页会实时拉取并在失败时回退到当前正文快照。
+                  飞书是正文的唯一来源。保存前先读取文档信息；文章页优先展示飞书实时内容，异常时回退到最近一次快照。
                 </p>
 
                 <button
                   type="button"
                   onClick={handleFeishuImport}
-                  disabled={importingFeishu}
+                  disabled={importingFeishu || !form.feishuDocUrl.trim()}
                   className={`w-full rounded-xl px-4 py-2 text-sm font-medium inline-flex items-center justify-center gap-2 ${importingFeishu
                     ? dm ? "bg-white/10 text-gray-500" : "bg-gray-200 text-gray-400"
                     : dm ? "bg-indigo-500/80 text-white hover:bg-indigo-400" : "bg-indigo-600 text-white hover:bg-indigo-700"
                     }`}
                 >
                   <RefreshCw size={14} className={importingFeishu ? "animate-spin" : ""} />
-                  {importingFeishu ? "同步中..." : "同步预览并覆盖正文"}
+                  {importingFeishu ? "读取中..." : "读取飞书信息"}
                 </button>
+
+                <p className={`text-xs inline-flex items-center gap-1 ${isFeishuReady
+                  ? dm ? "text-emerald-400" : "text-emerald-600"
+                  : dm ? "text-amber-400" : "text-amber-600"
+                  }`}>
+                  {isFeishuReady && <CheckCircle2 size={13} />}
+                  {isFeishuReady ? "飞书内容已就绪，可以保存" : "尚未读取飞书内容"}
+                </p>
               </div>
 
+              <label className="block">
+                <span className={`text-xs mb-1 block ${dm ? "text-gray-400" : "text-gray-500"}`}>标题 *</span>
+                <input
+                  required
+                  value={form.title}
+                  onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))}
+                  placeholder="读取飞书文档后自动填充，也可以调整"
+                  className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${dm ? "bg-gray-950 border-white/10 text-white placeholder:text-gray-600" : "bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"}`}
+                />
+                <span className={`text-xs mt-1 block ${dm ? "text-gray-500" : "text-gray-500"}`}>新建文章时会自动读取飞书文档标题。</span>
+              </label>
+
+              <label className="block">
+                <span className={`text-xs mb-1 block ${dm ? "text-gray-400" : "text-gray-500"}`}>Slug *</span>
+                <input
+                  required
+                  value={form.slug}
+                  onChange={(event) => setForm((prev) => ({ ...prev, slug: event.target.value }))}
+                  placeholder="例如：feishu-article-guide"
+                  className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${dm ? "bg-gray-950 border-white/10 text-white placeholder:text-gray-600" : "bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"}`}
+                />
+                <span className={`text-xs mt-1 block ${dm ? "text-gray-500" : "text-gray-500"}`}>
+                  用于生成文章访问地址 /blog/slug；建议使用简短、稳定的英文小写与连字符。
+                </span>
+              </label>
+
+              <ArticleAuthorFields
+                name={form.authorName}
+                avatarId={form.authorAvatar}
+                darkMode={dm}
+                onNameChange={authorName => setForm(prev => ({ ...prev, authorName }))}
+                onAvatarChange={authorAvatar => setForm(prev => ({ ...prev, authorAvatar }))}
+              />
+
               {([
-                { key: "title", label: "标题" },
-                { key: "slug", label: "Slug" },
-                { key: "excerpt", label: "摘要" },
-                { key: "category", label: "分类" },
-                { key: "tags", label: "标签（逗号分隔）" },
-                { key: "coverImage", label: "封面图 URL" },
-              ] as const).map(({ key, label }) => (
+                { key: "excerpt", label: "摘要（可选）", required: false },
+                { key: "category", label: "分类 *", required: true },
+                { key: "tags", label: "标签（逗号分隔，可选）", required: false },
+              ] as const).map(({ key, label, required }) => (
                 <label key={key} className="block">
                   <span className={`text-xs mb-1 block ${dm ? "text-gray-400" : "text-gray-500"}`}>{label}</span>
                   <input
+                    required={required}
                     value={form[key]}
                     onChange={(event) => setForm((prev) => ({ ...prev, [key]: event.target.value }))}
                     className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${dm ? "bg-gray-950 border-white/10 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`}
@@ -345,14 +401,30 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
               ))}
 
               <label className="block">
-                <span className={`text-xs mb-1 block ${dm ? "text-gray-400" : "text-gray-500"}`}>正文（Markdown）</span>
-                <textarea
-                  rows={10}
-                  value={form.content}
-                  onChange={(event) => setForm((prev) => ({ ...prev, content: event.target.value }))}
-                  className={`w-full rounded-xl border px-3 py-2 text-sm outline-none resize-y ${dm ? "bg-gray-950 border-white/10 text-white" : "bg-gray-50 border-gray-200 text-gray-900"}`}
+                <span className={`text-xs mb-1 block ${dm ? "text-gray-400" : "text-gray-500"}`}>封面图 URL（可选）</span>
+                <input
+                  value={form.coverImage}
+                  onChange={(event) => setForm((prev) => ({ ...prev, coverImage: event.target.value }))}
+                  placeholder="https://example.com/cover.jpg"
+                  className={`w-full rounded-xl border px-3 py-2 text-sm outline-none ${dm ? "bg-gray-950 border-white/10 text-white placeholder:text-gray-600" : "bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400"}`}
                 />
+                <span className={`text-xs mt-1 block ${dm ? "text-gray-500" : "text-gray-500"}`}>
+                  优先使用此地址；留空时使用飞书正文首图，仍无图片则使用站点兜底图。
+                </span>
               </label>
+
+              {resolvedCoverImage && (
+                <div className={`overflow-hidden rounded-xl border ${dm ? "border-white/10 bg-gray-950" : "border-gray-200 bg-gray-50"}`}>
+                  <img
+                    src={resolvedCoverImage}
+                    alt="文章封面预览"
+                    className="w-full h-32 object-cover"
+                  />
+                  <p className={`px-3 py-2 text-xs ${dm ? "text-gray-500" : "text-gray-500"}`}>
+                    {form.coverImage.trim() ? "手动封面预览" : "飞书首图预览"}
+                  </p>
+                </div>
+              )}
 
               {error && <p className="text-sm text-rose-500">{error}</p>}
               {notice && (
@@ -362,7 +434,7 @@ export function AdminArticles({ darkMode }: AdminArticlesProps) {
               )}
 
               <button
-                disabled={saving}
+                disabled={saving || importingFeishu}
                 className={`w-full rounded-xl px-4 py-2.5 text-sm font-medium inline-flex items-center justify-center gap-2 ${saving
                   ? dm ? "bg-white/10 text-gray-500" : "bg-gray-200 text-gray-400"
                   : dm ? "bg-indigo-500 text-white hover:bg-indigo-400" : "bg-indigo-600 text-white hover:bg-indigo-700"

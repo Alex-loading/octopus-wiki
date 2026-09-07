@@ -1,357 +1,47 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { Link, useNavigate, useLocation } from "react-router";
 import { motion, AnimatePresence, useScroll, useSpring } from "motion/react";
-import ReactMarkdown from "react-markdown";
-import type { Components } from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
-import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
-import rehypeSlug from "rehype-slug";
-import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import {
-  oneDark,
-  oneLight,
-} from "react-syntax-highlighter/dist/esm/styles/prism";
 import {
   ArrowLeft,
   Clock,
   Heart,
-  Bookmark,
   Share2,
-  Copy,
-  Check,
   MessageCircle,
   ChevronRight,
   Send,
   Tag,
   List,
 } from "lucide-react";
-import { getArticleBySlug, listArticles } from "../content/repository";
+import { MarkdownRenderer } from "../components/MarkdownRenderer";
+import { CommentDeleteButton } from "../components/CommentDeleteButton";
+import { OctopusAvatar } from "../components/OctopusAvatar";
+import { resolveAuthorName } from "../content/articleAuthor";
+import { useAdminAuth } from "../context/AdminAuthContext";
+import {
+  createArticleComment,
+  deleteArticleComment,
+  getArticleBySlug,
+  getArticleLikeState,
+  listArticleComments,
+  listArticles,
+  setArticleLiked,
+} from "../content/repository";
+import {
+  commentAvatar,
+  formatArticleDateTime,
+  getOrCreateArticleVisitorId,
+  type ArticleComment,
+} from "../content/articleInteractions";
 import type { Post as PostItem } from "../data/posts";
 
 interface PostProps {
   darkMode: boolean;
 }
 
-const MOCK_COMMENTS = [
-  {
-    id: 1,
-    author: "张晓明",
-    avatar: "Z",
-    time: "2 天前",
-    content: "写得很有共鸣，特别是关于注意力切换成本的部分，我也有同样的感受。",
-  },
-  {
-    id: 2,
-    author: "李思远",
-    avatar: "L",
-    time: "1 天前",
-    content:
-      "深度工作确实很难，但是一旦进入状态，那种专注的感觉真的很好。感谢分享！",
-  },
-  {
-    id: 3,
-    author: "王芳",
-    avatar: "W",
-    time: "5 小时前",
-    content:
-      "我最近也在尝试早起做深度工作，效果挺明显的，推荐给大家试试。",
-  },
-];
-
 interface Heading {
   id: string;
-  level: 2 | 3;
+  level: 1 | 2 | 3;
   text: string;
-}
-
-const markdownSanitizeSchema = {
-  ...defaultSchema,
-  attributes: {
-    ...defaultSchema.attributes,
-    h1: [...(defaultSchema.attributes?.h1 ?? []), "id"],
-    h2: [...(defaultSchema.attributes?.h2 ?? []), "id"],
-    h3: [...(defaultSchema.attributes?.h3 ?? []), "id"],
-    a: [
-      ...(defaultSchema.attributes?.a ?? []),
-      "id",
-      "className",
-      "ariaLabel",
-      "ariaHidden",
-      "tabIndex",
-    ],
-    code: [...(defaultSchema.attributes?.code ?? []), "className"],
-    pre: [...(defaultSchema.attributes?.pre ?? []), "className"],
-    span: [...(defaultSchema.attributes?.span ?? []), "className"],
-    th: [...(defaultSchema.attributes?.th ?? []), "align"],
-    td: [...(defaultSchema.attributes?.td ?? []), "align"],
-    input: [
-      ...(defaultSchema.attributes?.input ?? []),
-      "type",
-      "checked",
-      "disabled",
-    ],
-  },
-};
-
-function MarkdownRenderer({
-  content,
-  dm,
-}: {
-  content: string;
-  dm: boolean;
-}) {
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-  const handleCopyCode = async (rawCode: string) => {
-    if (!rawCode) return;
-    try {
-      await navigator.clipboard.writeText(rawCode);
-      setCopiedCode(rawCode);
-      window.setTimeout(() => setCopiedCode((prev) => (prev === rawCode ? null : prev)), 1500);
-    } catch {
-      setCopiedCode(null);
-    }
-  };
-
-  const components: Components = {
-    h2: ({ children, ...props }) => (
-      <h2
-        {...props}
-        className={`text-xl font-medium mt-10 mb-4 scroll-mt-28 leading-snug ${dm ? "text-white" : "text-gray-900"
-          } [&_.heading-anchor]:ml-2 [&_.heading-anchor]:opacity-0 [&_.heading-anchor]:transition-opacity hover:[&_.heading-anchor]:opacity-100`}
-      >
-        {children}
-      </h2>
-    ),
-    h3: ({ children, ...props }) => (
-      <h3
-        {...props}
-        className={`text-lg font-medium mt-7 mb-3 scroll-mt-28 leading-snug ${dm ? "text-gray-100" : "text-gray-900"
-          } [&_.heading-anchor]:ml-2 [&_.heading-anchor]:opacity-0 [&_.heading-anchor]:transition-opacity hover:[&_.heading-anchor]:opacity-100`}
-      >
-        {children}
-      </h3>
-    ),
-    p: ({ children, ...props }) => (
-      <p
-        {...props}
-        className={`my-4 text-base leading-8 ${dm ? "text-gray-300" : "text-gray-600"
-          }`}
-      >
-        {children}
-      </p>
-    ),
-    ul: ({ children, ...props }) => (
-      <ul
-        {...props}
-        className={`my-4 ml-6 list-disc space-y-2 ${dm ? "text-gray-300" : "text-gray-600"
-          }`}
-      >
-        {children}
-      </ul>
-    ),
-    ol: ({ children, ...props }) => (
-      <ol
-        {...props}
-        className={`my-4 ml-6 list-decimal space-y-2 ${dm ? "text-gray-300" : "text-gray-600"
-          }`}
-      >
-        {children}
-      </ol>
-    ),
-    li: ({ children, ...props }) => (
-      <li {...props} className="leading-8">
-        {children}
-      </li>
-    ),
-    blockquote: ({ children, ...props }) => (
-      <blockquote
-        {...props}
-        className={`my-5 border-l-2 pl-4 italic ${dm
-          ? "border-indigo-400/40 text-gray-300"
-          : "border-indigo-300 text-gray-600"
-          }`}
-      >
-        {children}
-      </blockquote>
-    ),
-    hr: (props) => (
-      <hr
-        {...props}
-        className={`my-8 border-0 h-px ${dm ? "bg-white/10" : "bg-gray-200"}`}
-      />
-    ),
-    a: ({ href, children, ...props }) => {
-      const isFragment = href?.startsWith("#");
-      return (
-        <a
-          {...props}
-          href={href}
-          target={isFragment ? undefined : "_blank"}
-          rel={isFragment ? undefined : "noreferrer noopener"}
-          className={`${dm
-            ? "text-indigo-300 hover:text-indigo-200"
-            : "text-indigo-700 hover:text-indigo-600"
-            } underline underline-offset-2 decoration-indigo-400/60`}
-        >
-          {children}
-        </a>
-      );
-    },
-    pre: ({ children }) => <>{children}</>,
-    code: ({ className, children, ...props }) => {
-      const value = String(children ?? "").replace(/\n$/, "");
-      const isInlineCode = !className && !value.includes("\n");
-
-      if (isInlineCode) {
-        return (
-          <code
-            {...props}
-            className={`px-1.5 py-0.5 rounded text-sm font-mono ${dm
-              ? "bg-white/10 text-indigo-300"
-              : "bg-gray-100 text-indigo-700"
-              }`}
-          >
-            {children}
-          </code>
-        );
-      }
-
-      const language = /language-([\w-]+)/.exec(className ?? "")?.[1] ?? "text";
-      const copied = copiedCode === value;
-
-      return (
-        <div className="group relative my-5">
-          <button
-            type="button"
-            onClick={() => handleCopyCode(value)}
-            disabled={!value}
-            className={`absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-all duration-150 ${copied
-              ? "pointer-events-auto opacity-100"
-              : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
-              } ${dm
-                ? "border-white/10 bg-gray-800/90 text-gray-300 hover:text-white"
-                : "border-gray-200 bg-white/90 text-gray-500 hover:text-gray-900"
-              } ${!value ? "cursor-not-allowed opacity-60" : ""}`}
-            aria-label={copied ? "代码已复制" : "复制代码"}
-          >
-            {copied ? <Check size={12} /> : <Copy size={12} />}
-            {copied ? "已复制" : "复制"}
-          </button>
-          <SyntaxHighlighter
-            {...props}
-            language={language}
-            style={dm ? oneDark : oneLight}
-            customStyle={{
-              margin: 0,
-              borderRadius: "0.75rem",
-              border: dm ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgb(229,231,235)",
-              paddingTop: "0.75rem",
-              paddingBottom: "0.75rem",
-              paddingLeft: "1rem",
-              paddingRight: "1rem",
-              fontSize: "0.875rem",
-              lineHeight: "1.5rem",
-              overflowX: "auto",
-            }}
-            codeTagProps={{
-              className: "font-mono",
-            }}
-            PreTag="div"
-          >
-            {value}
-          </SyntaxHighlighter>
-        </div>
-      );
-    },
-    table: ({ children, ...props }) => (
-      <div className="my-6 overflow-x-auto">
-        <table
-          {...props}
-          className={`w-full border-collapse text-sm ${dm ? "text-gray-300" : "text-gray-600"
-            }`}
-        >
-          {children}
-        </table>
-      </div>
-    ),
-    thead: ({ children, ...props }) => (
-      <thead
-        {...props}
-        className={dm ? "bg-white/5 text-gray-100" : "bg-gray-50 text-gray-900"}
-      >
-        {children}
-      </thead>
-    ),
-    th: ({ children, ...props }) => (
-      <th
-        {...props}
-        className={`border px-3 py-2 text-left font-medium ${dm ? "border-white/10" : "border-gray-200"
-          }`}
-      >
-        {children}
-      </th>
-    ),
-    td: ({ children, ...props }) => (
-      <td
-        {...props}
-        className={`border px-3 py-2 align-top ${dm ? "border-white/10" : "border-gray-200"}`}
-      >
-        {children}
-      </td>
-    ),
-    input: ({ type, checked, ...props }) => {
-      if (type !== "checkbox") return <input type={type} checked={checked} {...props} />;
-
-      return (
-        <input
-          {...props}
-          type="checkbox"
-          checked={checked}
-          disabled
-          className={`mr-2 align-middle rounded-sm ${dm
-            ? "border-white/20 bg-white/10 accent-indigo-400"
-            : "border-gray-300 bg-white accent-indigo-600"
-            }`}
-        />
-      );
-    },
-    strong: ({ children, ...props }) => (
-      <strong {...props} className={dm ? "text-white font-medium" : "text-gray-900 font-medium"}>
-        {children}
-      </strong>
-    ),
-    del: ({ children, ...props }) => (
-      <del {...props} className={dm ? "text-gray-500" : "text-gray-400"}>
-        {children}
-      </del>
-    ),
-  };
-
-  return (
-    <div className="text-base">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[
-          rehypeRaw,
-          rehypeSlug,
-          [rehypeAutolinkHeadings, {
-            behavior: "append",
-            properties: {
-              className: ["heading-anchor"],
-              ariaLabel: "标题锚点",
-            },
-          }],
-          [rehypeSanitize, markdownSanitizeSchema],
-        ]}
-        components={components}
-      >
-        {content}
-      </ReactMarkdown>
-    </div>
-  );
 }
 
 function TableOfContents({
@@ -388,7 +78,7 @@ function TableOfContents({
             });
             onItemClick?.();
           }}
-          className={`block text-xs leading-relaxed transition-all duration-200 ${h.level === 3 ? "pl-3" : ""
+          className={`block text-xs leading-relaxed transition-all duration-200 ${h.level === 2 ? "pl-2" : h.level === 3 ? "pl-4" : ""
             } ${activeId === h.id
               ? dm
                 ? "text-indigo-400 font-medium"
@@ -417,10 +107,16 @@ export function Post({ darkMode }: PostProps) {
   const dm = darkMode;
 
   const [liked, setLiked] = useState(false);
-  const [bookmarked, setBookmarked] = useState(false);
-  const [likeCount] = useState(Math.floor(Math.random() * 80) + 20);
+  const [likeCount, setLikeCount] = useState(0);
+  const [likePending, setLikePending] = useState(false);
+  const [interactionError, setInteractionError] = useState("");
+  const [commentAuthor, setCommentAuthor] = useState("");
   const [comment, setComment] = useState("");
-  const [comments, setComments] = useState(MOCK_COMMENTS);
+  const [comments, setComments] = useState<ArticleComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState("");
+  const { isAdmin } = useAdminAuth();
   const [copied, setCopied] = useState(false);
   const [activeHeadingId, setActiveHeadingId] = useState("");
   const [showToc, setShowToc] = useState(false);
@@ -429,6 +125,7 @@ export function Post({ darkMode }: PostProps) {
   const [allArticles, setAllArticles] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
+  const visitorIdRef = useRef("");
 
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
@@ -449,7 +146,7 @@ export function Post({ darkMode }: PostProps) {
 
     const rafId = window.requestAnimationFrame(() => {
       const nodes = contentRef.current?.querySelectorAll<HTMLHeadingElement>(
-        "h2[id], h3[id]"
+        "h1[id], h2[id], h3[id]"
       );
 
       if (!nodes || nodes.length === 0) {
@@ -460,7 +157,7 @@ export function Post({ darkMode }: PostProps) {
 
       const extracted = Array.from(nodes).map((node) => ({
         id: node.id,
-        level: (node.tagName === "H3" ? 3 : 2) as 2 | 3,
+        level: (node.tagName === "H1" ? 1 : node.tagName === "H2" ? 2 : 3) as 1 | 2 | 3,
         text: node.textContent?.replace(/^#\s*/, "").trim() ?? "",
       }));
 
@@ -502,6 +199,7 @@ export function Post({ darkMode }: PostProps) {
       .then(([detail, list]) => {
         if (cancelled) return;
         setPost(detail);
+        setLikeCount(detail?.likeCount ?? 0);
         setAllArticles(list);
       })
       .finally(() => {
@@ -514,25 +212,91 @@ export function Post({ darkMode }: PostProps) {
     };
   }, [slug]);
 
+  useEffect(() => {
+    if (!post) {
+      setComments([]);
+      return;
+    }
+
+    let cancelled = false;
+    setCommentsLoading(true);
+    setInteractionError("");
+    setCommentError("");
+
+    try {
+      visitorIdRef.current = getOrCreateArticleVisitorId();
+    } catch (error) {
+      setInteractionError(error instanceof Error ? error.message : "无法初始化点赞状态。");
+    }
+
+    const likeRequest = visitorIdRef.current
+      ? getArticleLikeState(post.id, visitorIdRef.current, post.likeCount ?? 0)
+      : Promise.resolve({ ok: true as const, data: { likeCount: post.likeCount ?? 0, liked: false } });
+
+    Promise.all([likeRequest, listArticleComments(post.id)])
+      .then(([likeResult, commentResult]) => {
+        if (cancelled) return;
+        if (likeResult.ok) {
+          setLiked(likeResult.data.liked);
+          setLikeCount(likeResult.data.likeCount);
+        } else {
+          setInteractionError(likeResult.error);
+        }
+        if (commentResult.ok) {
+          setComments(commentResult.data);
+        } else {
+          setCommentError(commentResult.error);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCommentsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [post?.id]);
+
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleComment = (e: React.FormEvent) => {
+  const handleLike = async () => {
+    if (!post || likePending) return;
+    setInteractionError("");
+    setLikePending(true);
+
+    try {
+      const visitorId = visitorIdRef.current || getOrCreateArticleVisitorId();
+      visitorIdRef.current = visitorId;
+      const result = await setArticleLiked(post.id, visitorId, !liked);
+      if (!result.ok) {
+        setInteractionError(result.error);
+        return;
+      }
+      setLiked(result.data.liked);
+      setLikeCount(result.data.likeCount);
+    } catch (error) {
+      setInteractionError(error instanceof Error ? error.message : "点赞失败，请稍后重试。");
+    } finally {
+      setLikePending(false);
+    }
+  };
+
+  const handleComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comment.trim()) return;
-    setComments([
-      ...comments,
-      {
-        id: Date.now(),
-        author: "你",
-        avatar: "你",
-        time: "刚刚",
-        content: comment,
-      },
-    ]);
+    if (!post || !comment.trim() || commentSubmitting) return;
+    setCommentError("");
+    setCommentSubmitting(true);
+    const result = await createArticleComment(post.id, commentAuthor, comment);
+    setCommentSubmitting(false);
+    if (!result.ok) {
+      setCommentError(result.error);
+      return;
+    }
+    setComments((current) => [result.data, ...current]);
     setComment("");
   };
 
@@ -701,21 +465,14 @@ export function Post({ darkMode }: PostProps) {
               </p>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium ${dm
-                      ? "bg-indigo-500 text-white"
-                      : "bg-indigo-600 text-white"
-                      }`}
-                  >
-                    陈
-                  </div>
-                  <div>
+                <div className="flex items-center gap-4 min-w-0">
+                  <OctopusAvatar avatarId={post.authorAvatar} className="w-10 h-10" />
+                  <div className="min-w-0">
                     <p
-                      className={`text-sm font-medium ${dm ? "text-white" : "text-gray-900"
+                      className={`text-sm font-medium break-words ${dm ? "text-white" : "text-gray-900"
                         }`}
                     >
-                      陈默
+                      {resolveAuthorName(post.authorName)}
                     </p>
                     <div
                       className={`flex items-center gap-2 text-xs ${dm ? "text-gray-500" : "text-gray-400"
@@ -815,17 +572,18 @@ export function Post({ darkMode }: PostProps) {
               >
                 如果这篇文章对你有帮助，请点赞支持 😊
               </p>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end gap-2">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.85 }}
-                  onClick={() => setLiked(!liked)}
+                  onClick={handleLike}
+                  disabled={likePending}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${liked
                     ? "bg-rose-500 text-white"
                     : dm
                       ? "bg-white/5 text-gray-400 hover:bg-white/10"
                       : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                    }`}
+                    } ${likePending ? "opacity-60 cursor-wait" : ""}`}
                 >
                   <motion.div
                     animate={{ scale: liked ? [1, 1.5, 1] : 1 }}
@@ -833,26 +591,11 @@ export function Post({ darkMode }: PostProps) {
                   >
                     <Heart size={14} fill={liked ? "currentColor" : "none"} />
                   </motion.div>
-                  {likeCount + (liked ? 1 : 0)}
+                  {likeCount}
                 </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.85 }}
-                  onClick={() => setBookmarked(!bookmarked)}
-                  className={`p-2 rounded-xl transition-all ${bookmarked
-                    ? dm
-                      ? "bg-indigo-500/20 text-indigo-400"
-                      : "bg-indigo-50 text-indigo-600"
-                    : dm
-                      ? "bg-white/5 text-gray-400 hover:bg-white/10"
-                      : "bg-white text-gray-500 border border-gray-200"
-                    }`}
-                >
-                  <Bookmark
-                    size={16}
-                    fill={bookmarked ? "currentColor" : "none"}
-                  />
-                </motion.button>
+                {interactionError && (
+                  <span className="text-xs text-rose-500 max-w-52 text-right">{interactionError}</span>
+                )}
               </div>
             </motion.div>
 
@@ -939,24 +682,38 @@ export function Post({ darkMode }: PostProps) {
                       : "bg-indigo-600 text-white"
                       }`}
                   >
-                    你
+                    {commentAvatar(commentAuthor)}
                   </div>
                   <div className="flex-1">
+                    <input
+                      value={commentAuthor}
+                      onChange={(e) => setCommentAuthor(e.target.value)}
+                      maxLength={40}
+                      placeholder="昵称（可选，留空则匿名）"
+                      className={`w-full bg-transparent outline-none text-sm pb-2 mb-2 border-b ${dm
+                        ? "text-white border-white/5 placeholder:text-gray-600"
+                        : "text-gray-900 border-gray-200 placeholder:text-gray-400"
+                        }`}
+                    />
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
                       placeholder="写下你的想法..."
                       rows={3}
+                      maxLength={1000}
                       className={`w-full bg-transparent outline-none resize-none text-sm placeholder:text-gray-500 ${dm ? "text-white" : "text-gray-900"
                         }`}
                     />
-                    <div className="flex justify-end mt-2">
+                    <div className="flex items-center justify-between mt-2">
+                      <span className={`text-xs ${dm ? "text-gray-600" : "text-gray-400"}`}>
+                        {comment.length}/1000
+                      </span>
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.97 }}
                         type="submit"
-                        disabled={!comment.trim()}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all ${comment.trim()
+                        disabled={!comment.trim() || commentSubmitting}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all ${comment.trim() && !commentSubmitting
                           ? dm
                             ? "bg-indigo-500 text-white hover:bg-indigo-400"
                             : "bg-indigo-600 text-white hover:bg-indigo-700"
@@ -966,16 +723,22 @@ export function Post({ darkMode }: PostProps) {
                           }`}
                       >
                         <Send size={12} />
-                        发布
+                        {commentSubmitting ? "发布中..." : "发布"}
                       </motion.button>
                     </div>
                   </div>
                 </div>
+                {commentError && <p className="text-sm text-rose-500 mt-2">{commentError}</p>}
               </form>
 
               {/* Comment list */}
               <div className="space-y-5">
-                <AnimatePresence>
+                {commentsLoading ? (
+                  <p className={`text-sm ${dm ? "text-gray-500" : "text-gray-400"}`}>正在加载评论...</p>
+                ) : comments.length === 0 ? (
+                  <p className={`text-sm ${dm ? "text-gray-500" : "text-gray-400"}`}>还没有评论，来分享第一个想法吧。</p>
+                ) : (
+                  <AnimatePresence>
                   {comments.map((c, i) => (
                     <motion.div
                       key={c.id}
@@ -985,16 +748,12 @@ export function Post({ darkMode }: PostProps) {
                       className="flex gap-3"
                     >
                       <div
-                        className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-medium ${c.author === "你"
-                          ? dm
-                            ? "bg-indigo-500 text-white"
-                            : "bg-indigo-600 text-white"
-                          : dm
-                            ? "bg-white/10 text-gray-300"
-                            : "bg-gray-200 text-gray-600"
+                        className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-xs font-medium ${dm
+                          ? "bg-white/10 text-gray-300"
+                          : "bg-gray-200 text-gray-600"
                           }`}
                       >
-                        {c.avatar}
+                        {commentAvatar(c.authorName)}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -1002,13 +761,13 @@ export function Post({ darkMode }: PostProps) {
                             className={`text-sm font-medium ${dm ? "text-white" : "text-gray-900"
                               }`}
                           >
-                            {c.author}
+                            {c.authorName}
                           </span>
                           <span
                             className={`text-xs ${dm ? "text-gray-600" : "text-gray-400"
                               }`}
                           >
-                            {c.time}
+                            {formatArticleDateTime(c.createdAt)}
                           </span>
                         </div>
                         <p
@@ -1017,10 +776,20 @@ export function Post({ darkMode }: PostProps) {
                         >
                           {c.content}
                         </p>
+                        <CommentDeleteButton
+                          isAdmin={isAdmin}
+                          darkMode={dm}
+                          onDelete={async () => {
+                            const result = await deleteArticleComment(c.articleId, c.id);
+                            if (!result.ok) throw new Error(result.error);
+                            setComments((current) => current.filter((item) => item.id !== result.data.id));
+                          }}
+                        />
                       </div>
                     </motion.div>
-                  ))}
-                </AnimatePresence>
+                    ))}
+                  </AnimatePresence>
+                )}
               </div>
             </motion.div>
           </div>
