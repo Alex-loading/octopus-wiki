@@ -31,6 +31,8 @@
 - 使用故意无效的测试 token 请求公开 Auth 验证端点（不发送邮件、不登录账号），验证实际 303 回跳为生产 `/admin/login?next=%2Fcollect%2Fsetup`，参数完整保留。
 - Supabase HTTPS Data API 检查当前文章、评论、点赞、收藏箱、资源、设备授权表及新文章字段均可访问，因此未重复执行迁移、未写入测试记录。
 - 用户明确授权后，将现有 `SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY`、`FEISHU_APP_ID`、`FEISHU_APP_SECRET`、`FEISHU_MEDIA_SIGNING_SECRET` 补充到指定 Vercel 项目的 Production 加密环境变量；无密钥进入源码。
+- 首次部署后的运行日志发现 `ERR_MODULE_NOT_FOUND`：已编译的 API 仍引用 `.ts` 路径。新增 API TypeScript 配置并启用 `rewriteRelativeImportExtensions`，固定编译依赖，将 API 类型检查纳入构建。
+- 修复后 103/103 测试、API 严格类型检查和前端构建通过；四个 API 编译为 JavaScript 后均可直接由 Node 加载，收藏状态查询返回 200，未授权预览返回 403。
 
 ## 验证边界
 
