@@ -41,7 +41,10 @@
   nonempty collections cannot be deleted.
 
   `/collect/setup` provides a desktop bookmarklet, Android PWA installation/share instructions,
-  and an iOS Shortcuts integration recipe. Copy/paste works across devices. The metadata preview
+  and an iOS Shortcuts integration recipe. On Android, copy the whole sharing text from the original
+  app, open the installed collector, and choose “粘贴并识别” (or long-press to paste). App-specific share
+  panels cannot be extended through Web Share Target. Sharing text prefills a title, and short links
+  remain saveable when metadata is unavailable; covers are optional. The metadata preview
   API reuses the server-only Supabase variables; unsupported or blocked previews can be filled
   manually. Full content backup and synchronization with platform-native favorites are not included.
 

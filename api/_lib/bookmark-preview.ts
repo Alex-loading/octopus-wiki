@@ -16,6 +16,7 @@ const PREVIEW_HOSTS = new Set([
   "m.xiaohongshu.com",
   "xhslink.com",
   "www.xhslink.com",
+  "xhslink.cn",
   "nowcoder.com",
   "www.nowcoder.com",
   "m.nowcoder.com",

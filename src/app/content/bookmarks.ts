@@ -68,7 +68,7 @@ export function parseBookmarkUrl(value: string): URL {
 export function extractBookmarkUrls(text: string): string[] {
   return [
     ...new Set(
-      (text.match(/https?:\/\/[^\s<>"'\u3000，。！？、；“”‘’【】]+/giu) ?? [])
+      (text.match(/https?:\/\/[^\s<>"'\[\]\u3000，。！？、；“”‘’【】]+/giu) ?? [])
         .map((value) => value.replace(/[)）\]】,.;!?]+$/u, ""))
         .filter((value) => {
           try {
@@ -82,6 +82,29 @@ export function extractBookmarkUrls(text: string): string[] {
   ];
 }
 
+export function parseBookmarkShare(text: string): {
+  urls: string[];
+  title: string;
+} {
+  const urls = extractBookmarkUrls(text);
+  if (urls.length !== 1) return { urls, title: "" };
+  // Only use the text before the link: app slogans and copy codes follow it.
+  let title = text.slice(0, text.indexOf(urls[0])).trim();
+  if (identifyPlatform(urls[0]) === "douyin") {
+    title = title
+      .replace(/^(?:\d+(?:\.\d+)?\s+)?复制打开抖音[，,]?\s*(?:看看)?/u, "")
+      .replace(/^【[^】]*的作品】/u, "");
+  }
+  return {
+    urls,
+    title: title
+      .replace(/[\s[（(]+$/u, "")
+      .replace(/\s+/gu, " ")
+      .trim()
+      .slice(0, 300),
+  };
+}
+
 export function identifyPlatform(value: string): BookmarkPlatform {
   let host: string;
   try {
@@ -93,7 +116,8 @@ export function identifyPlatform(value: string): BookmarkPlatform {
     domains.some((domain) => host === domain || host.endsWith(`.${domain}`));
   if (matches(["bilibili.com", "b23.tv"])) return "bilibili";
   if (matches(["douyin.com", "iesdouyin.com"])) return "douyin";
-  if (matches(["xiaohongshu.com", "xhslink.com"])) return "xiaohongshu";
+  if (matches(["xiaohongshu.com", "xhslink.com", "xhslink.cn"]))
+    return "xiaohongshu";
   if (matches(["nowcoder.com"])) return "nowcoder";
   return "other";
 }
@@ -157,8 +181,15 @@ export function captureFromSearch(search: string): {
 } {
   const params = new URLSearchParams(search);
   const text = (params.get("text") ?? "").slice(0, 6000);
-  const links = extractBookmarkUrls(params.get("url") || text);
-  const title = (params.get("title") ?? "").trim().slice(0, 300);
+  const sharedTitle = (params.get("title") ?? "").trim();
+  const source = params.get("url") || text || sharedTitle;
+  const shared = parseBookmarkShare(source);
+  const links = shared.urls;
+  const title = (
+    sharedTitle && !extractBookmarkUrls(sharedTitle).length
+      ? sharedTitle
+      : shared.title
+  ).slice(0, 300);
   const cover = params.get("cover") ?? "";
   let cover_url = "";
   try {
@@ -173,7 +204,7 @@ export function captureFromSearch(search: string): {
       title,
       cover_url,
     },
-    text: params.get("url") || text,
+    text: source,
   };
 }
 

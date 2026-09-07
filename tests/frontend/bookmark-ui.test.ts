@@ -262,6 +262,59 @@ test("failed saving retains the draft and never announces success", async () => 
     false,
   );
 });
+test("Android pasted sharing text remains saveable when Douyin metadata is unavailable", async () => {
+  stubDatabase();
+  mock.method(repository.getSupabaseClient().auth, "getSession", async () => ({ data: { session: { access_token: "test" } }, error: null }));
+  let saved: any;
+  mock.method(globalThis, "fetch", async () => Response.json({ success: false, message: "未读取到标题或封面，可以手动填写后保存。" }, { status: 422 }));
+  const text = "3.84 复制打开抖音，看看【笑出苹果肌（万岁山搞笑没门版）的作品】这哥们儿真男人！# 万岁山武侠城 # 万岁山老嫂子... https://v.douyin.com/U3W4xeBm6Ns/ 10/21 b@N.jP FUY:/ :2pm";
+  const readText = mock.fn(async () => text);
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { readText } });
+  await mount(React.createElement(Form, {
+    collections: [box], onCollectionCreated() {}, onSaved(item: any) { saved = item; },
+  }));
+  assert.equal(readText.mock.callCount(), 0);
+  await click("粘贴并识别");
+  assert.equal(readText.mock.callCount(), 1);
+  assert.equal((host.querySelector('[aria-label="链接或分享文案"]') as HTMLTextAreaElement).value, text);
+  assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "这哥们儿真男人！# 万岁山武侠城 # 万岁山老嫂子...");
+  await click("读取标题与封面");
+  assert.match(host.textContent!, /可以手动填写后保存/);
+  await change("收藏箱", boxId);
+  await act(async () => Simulate.submit(host.querySelector("form")!));
+  assert.equal(saved.url, "https://v.douyin.com/U3W4xeBm6Ns/");
+  assert.equal(saved.platform, "douyin");
+  assert.equal(saved.cover_url, "");
+  assert.match(saved.title, /^这哥们儿真男人/);
+});
+test("denied clipboard access preserves the draft and manual paste still recognizes Xiaohongshu", async () => {
+  stubDatabase();
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { readText: async () => { throw new Error("denied"); } } });
+  await mount(React.createElement(Form, { collections: [box], onCollectionCreated() {}, onSaved() {} }));
+  await change("链接或分享文案", "原来真的有这样真挚且幸福的父母爱情 https://xhslink.cn/o/8plZFEty9Hb 【小红书】里有答案");
+  await click("粘贴并识别");
+  assert.match(host.textContent!, /长按.*粘贴/);
+  assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "原来真的有这样真挚且幸福的父母爱情");
+  await change("标题", "我自己写的标题");
+  await change("链接或分享文案", "另一个标题 https://xhslink.cn/o/another 【小红书】");
+  assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "我自己写的标题");
+  assert.match(host.querySelector(".bookmark-parsed")!.textContent!, /小红书.*another/);
+});
+test("auto-filled share titles follow changed links, but successful preview respects manually edited titles", async () => {
+  stubDatabase();
+  mock.method(repository.getSupabaseClient().auth, "getSession", async () => ({ data: { session: { access_token: "test" } }, error: null }));
+  mock.method(globalThis, "fetch", async () => Response.json({ success: true, data: { title: "网页完整标题", cover_url: "" } }));
+  await mount(React.createElement(Form, { collections: [box], onCollectionCreated() {}, onSaved() {} }));
+  await change("链接或分享文案", "第一条 https://xhslink.cn/o/first");
+  await change("链接或分享文案", "第二条 https://xhslink.cn/o/second");
+  assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "第二条");
+  await click("读取标题与封面");
+  assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "网页完整标题");
+  assert.match(host.textContent!, /封面选填/);
+  await change("标题", "手动标题");
+  await click("读取标题与封面");
+  assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "手动标题");
+});
 test("unauthorized sharing offers one-time login with encoded input and performs no private query", async () => {
   const from = stubDatabase();
   mock.method(globalThis, "fetch", async () =>

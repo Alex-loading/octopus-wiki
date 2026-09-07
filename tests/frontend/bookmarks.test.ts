@@ -56,6 +56,39 @@ test("preserves signed access parameters, content fragments, and the original UR
     canonicalBookmarkUrl("https://site.example/watch?id=2"),
   );
 });
+test("Android sharing text recognizes current short domains and prefills a usable title", () => {
+  const samples = [
+    {
+      text: "原来真的有这样真挚且幸福的父母爱情 （素材来源于网... https://xhslink.cn/o/8plZFEty9Hb 【小红书】里有答案，快去围观~",
+      url: "https://xhslink.cn/o/8plZFEty9Hb",
+      platform: "xiaohongshu",
+      title: "原来真的有这样真挚且幸福的父母爱情 （素材来源于网...",
+    },
+    {
+      text: "3.84 复制打开抖音，看看【笑出苹果肌（万岁山搞笑没门版）的作品】这哥们儿真男人！# 万岁山武侠城 # 万岁山老嫂子... https://v.douyin.com/U3W4xeBm6Ns/ 10/21 b@N.jP FUY:/ :2pm",
+      url: "https://v.douyin.com/U3W4xeBm6Ns/",
+      platform: "douyin",
+      title: "这哥们儿真男人！# 万岁山武侠城 # 万岁山老嫂子...",
+    },
+  ];
+  for (const sample of samples) {
+    assert.deepEqual(extractBookmarkUrls(sample.text), [sample.url]);
+    assert.equal(identifyPlatform(sample.url), sample.platform);
+    const { draft } = captureFromSearch("?" + new URLSearchParams({ text: sample.text }));
+    assert.equal(draft.url, sample.url);
+    assert.equal(draft.title, sample.title);
+    const saved = validateBookmarkDraft({ ...draft, collection_id: "10000000-0000-0000-0000-000000000001" });
+    assert.equal(saved.url, sample.url);
+    assert.equal(saved.platform, sample.platform);
+  }
+  assert.equal(identifyPlatform("https://xhslink.cn.evil.example/o/test"), "other");
+});
+test("pasted Markdown links do not absorb the surrounding link syntax", () => {
+  const url = "https://xhslink.cn/o/8plZFEty9Hb";
+  assert.deepEqual(extractBookmarkUrls(`分享 [${url}](${url}) 【小红书】`), [url]);
+  assert.equal(captureFromSearch("?" + new URLSearchParams({ title: `好内容 ${url}` })).draft.url, url);
+  assert.equal(captureFromSearch("?text=" + encodeURIComponent(url)).draft.title, "");
+});
 test("rejects active schemes, malformed URLs, credentials, oversized input and missing categories", () => {
   for (const value of [
     "javascript:alert(1)",

@@ -30,7 +30,7 @@ export function CollectorSetup({ darkMode }: { darkMode: boolean }) {
           <div>
             <p className="bookmark-eyebrow">COLLECT FROM ANYWHERE</p>
             <h1>让收藏顺手一点。</h1>
-            <p>电脑点一下，手机分享过来，再选一个收藏箱。</p>
+            <p>电脑用书签按钮，手机复制后粘贴，再选一个收藏箱。</p>
           </div>
         </header>
         <CollectorAuthorization device={device} />
@@ -77,7 +77,7 @@ export function CollectorSetup({ darkMode }: { darkMode: boolean }) {
           </p>
         </section>
         <section className="bookmark-setup-section">
-          <h2>Android · 分享到收藏箱</h2>
+          <h2>Android · 复制后粘贴收藏</h2>
           <ol>
             <li>在支持安装网站应用的浏览器中打开本站，例如 Android Chrome。</li>
             <li>
@@ -87,15 +87,15 @@ export function CollectorSetup({ darkMode }: { darkMode: boolean }) {
             <li>
               打开安装好的应用，在快捷收藏设置中登录管理员邮箱。去邮箱复制验证码，切回本应用输入，验证后点击「启用 90 天免登录收藏」。
             </li>
-            <li>在原 App 打开系统分享菜单，选择「Octopus 收藏箱」。</li>
-            <li>核对链接，选择或新建收藏箱，点击保存。</li>
+            <li>在 bilibili、抖音、小红书等 App 的分享面板中选择「复制链接」。整段文案可以直接复制，不用自己删掉文字或展开短链。</li>
+            <li>从桌面打开「Octopus 收藏箱」，点击「粘贴并识别」；也可以在输入框长按粘贴。</li>
+            <li>核对自动提取的标题，选择或新建收藏箱，点击保存。封面选填，读取失败也可以保存。</li>
           </ol>
           <p>
-            需要原 App 提供系统分享入口，且浏览器支持 Web Share
-            Target。若分享列表中找不到它，先复制分享文案，再打开下方收藏入口粘贴。
+            收藏箱只能注册到 Android 系统分享菜单，无法添加到原 App 自己设计的分享面板中。若原 App 提供「更多」或「系统分享」，可以尝试从那里选择「Octopus 收藏箱」；没有这个入口时使用复制粘贴即可。
           </p>
           <p className="bookmark-hint">
-            分享只会预填表单，保存后才会产生收藏。需要联网；手机 PWA
+            粘贴和分享只会预填表单，点击保存后才会产生收藏。需要联网；手机 PWA
             和浏览器若不共享站点数据，需要分别启用一次免登录收藏。
           </p>
         </section>

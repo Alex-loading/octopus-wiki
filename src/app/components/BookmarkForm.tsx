@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Image, Plus, Save, WandSparkles } from "lucide-react";
+import { ClipboardPaste, Image, Plus, Save, WandSparkles } from "lucide-react";
 import {
   emptyBookmark,
   extractBookmarkUrls,
   identifyPlatform,
+  parseBookmarkShare,
   PLATFORMS,
   type BookmarkCollection,
   type BookmarkDraft,
@@ -46,6 +47,7 @@ export function BookmarkForm({
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
+  const [pasting, setPasting] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newBox, setNewBox] = useState("");
   const [newBoxPublic, setNewBoxPublic] = useState(true);
@@ -53,6 +55,10 @@ export function BookmarkForm({
   const live = useRef(true);
   const busy = useRef(false);
   const boxBusy = useRef(false);
+  const suggestedTitle = useRef(
+    !bookmarkId &&
+      (!initial.title || initial.title === parseBookmarkShare(initialText).title),
+  );
   useEffect(() => {
     live.current = true;
     return () => {
@@ -67,8 +73,34 @@ export function BookmarkForm({
   const changeText = (value: string) => {
     setText(value);
     setNotice("");
-    const urls = extractBookmarkUrls(value);
-    set("url", urls.length === 1 ? urls[0] : "");
+    const share = parseBookmarkShare(value);
+    setDraft((current) => ({
+      ...current,
+      url: share.urls.length === 1 ? share.urls[0] : "",
+      title: suggestedTitle.current ? share.title : current.title,
+    }));
+  };
+  const paste = async () => {
+    if (pasting) return;
+    setPasting(true);
+    try {
+      const value = await navigator.clipboard.readText();
+      if (!live.current) return;
+      if (!value.trim() || value.length > 6000) {
+        setNotice(
+          value.length > 6000
+            ? "分享文案过长，请精简到 6000 字以内后粘贴。"
+            : "剪贴板没有文字，请先在原 App 复制链接。",
+        );
+        return;
+      }
+      changeText(value);
+    } catch {
+      if (live.current)
+        setNotice("无法读取剪贴板，请在上方输入框长按，选择「粘贴」。");
+    } finally {
+      if (live.current) setPasting(false);
+    }
   };
   const preview = async () => {
     if (!draft.url || previewing) return;
@@ -84,11 +116,18 @@ export function BookmarkForm({
             ? current
             : {
                 ...current,
-                title: current.title || metadata.title,
+                title:
+                  metadata.title && suggestedTitle.current
+                    ? metadata.title
+                    : current.title || metadata.title,
                 cover_url: current.cover_url || metadata.cover_url,
               },
         );
-        setNotice("读取完成，已补全空白的标题和封面。保存前请核对。");
+        setNotice(
+          metadata.cover_url
+            ? "读取完成，已补全可读取的信息。保存前请核对。"
+            : "已读取标题，未读取到封面；封面选填，可以直接保存。",
+        );
       }
     } catch (error) {
       if (live.current)
@@ -159,6 +198,20 @@ export function BookmarkForm({
             required
           />
         </label>
+        <div className="bookmark-form-actions">
+          <button
+            type="button"
+            onClick={paste}
+            disabled={pasting}
+            className="bookmark-button"
+          >
+            <ClipboardPaste size={15} />
+            {pasting ? "粘贴中…" : "粘贴并识别"}
+          </button>
+        </div>
+        <p className="bookmark-hint">
+          原 App 分享面板中没有收藏箱时，复制整段分享文案后到这里粘贴。标题可从文案提取，封面选填；无需先展开短链。
+        </p>
         {urls.length > 1 && (
           <label>
             文案中有多个链接，请选择
@@ -202,7 +255,10 @@ export function BookmarkForm({
           <input
             aria-label="标题"
             value={draft.title}
-            onChange={(event) => set("title", event.target.value)}
+            onChange={(event) => {
+              suggestedTitle.current = false;
+              set("title", event.target.value);
+            }}
             required
             maxLength={300}
             placeholder="给这条收藏起个容易找到的名字"

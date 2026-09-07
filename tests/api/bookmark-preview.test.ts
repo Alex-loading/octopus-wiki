@@ -89,6 +89,32 @@ test("follows approved short links and bounds content and redirect loops", async
     /跳转过多/,
   );
 });
+test("follows xhslink.cn while preserving signed destination parameters and redirect restrictions", async () => {
+  const destination = "https://www.xiaohongshu.com/discovery/item/abc?xsec_token=a%2Fb&xsec_source=app_share";
+  const visited: string[] = [];
+  const preview = await fetchBookmarkPreview("https://xhslink.cn/o/8plZFEty9Hb", (async (url) => {
+    visited.push(String(url));
+    return visited.length === 1
+      ? new Response(null, { status: 302, headers: { location: destination } })
+      : new Response('<title>父母爱情 - 小红书</title><meta property="og:image" content="https://sns-img.example/cover.jpg">', { headers: { "content-type": "text/html" } });
+  }) as typeof fetch);
+  assert.deepEqual(visited, ["https://xhslink.cn/o/8plZFEty9Hb", destination]);
+  assert.equal(preview.title, "父母爱情 - 小红书");
+  assert.equal(preview.cover_url, "https://sns-img.example/cover.jpg");
+  assert.throws(() => allowedPreviewUrl("https://xhslink.cn.evil.example/o/test"));
+  assert.throws(() => allowedPreviewUrl("https://arbitrary.xhslink.cn/o/test"));
+});
+test("Douyin short links without page metadata report an optional preview failure", async () => {
+  const visited: string[] = [];
+  await assert.rejects(fetchBookmarkPreview("https://v.douyin.com/U3W4xeBm6Ns/", (async (url) => {
+    visited.push(String(url));
+    const next = ["https://www.iesdouyin.com/share/video/7681983811227372425/", "https://www.douyin.com/video/7681983811227372425"][visited.length - 1];
+    return next
+      ? new Response(null, { status: 302, headers: { location: next } })
+      : new Response('<html><script src="/page.js"></script></html>', { headers: { "content-type": "text/html" } });
+  }) as typeof fetch), /手动填写后保存/);
+  assert.equal(visited.length, 3);
+});
 test("preview authenticates before any fetch, keeps replies private and gracefully fails", async () => {
   let calls = 0;
   const handler = createBookmarkPreviewHandler({
