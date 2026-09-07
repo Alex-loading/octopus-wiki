@@ -174,7 +174,10 @@ test("login email uses a same-origin callback, validates next and never creates 
   await act(async () => Simulate.change(input, { target: { value: "admin@example.com" } } as any));
   await act(async () => Simulate.submit(host.querySelector("form")!));
   assert.equal(send.mock.callCount(), 1);
-  assert.match(host.querySelector('[role="status"]')?.textContent ?? "", /登录链接已发送/);
+  assert.match(host.querySelector('[role="status"]')?.textContent ?? "", /验证码已发送/);
+  assert.ok(host.querySelector('input[autocomplete="one-time-code"]'));
+  const resend = [...host.querySelectorAll("button")].find(button => button.textContent?.includes("秒后可重新发送"))!;
+  assert.equal(resend.disabled, true);
 });
 
 test("production magic links return to the production login callback and retain shared bookmark input", async () => {
@@ -195,6 +198,91 @@ test("production magic links return to the production login callback and retain 
   assert.equal(redirect!.searchParams.get("next"), next);
   assert.ok(!redirect!.href.includes("localhost"));
 });
+
+async function enterExistingCode(value = "12345678") {
+  await act(async () => Simulate.change(host.querySelector('input[type="email"]')!, { target: { value: "admin@example.com" } } as any));
+  await act(async () => [...host.querySelectorAll("button")].find(button => button.textContent === "已有验证码，直接输入")!.click());
+  const input = host.querySelector<HTMLInputElement>('input[autocomplete="one-time-code"]')!;
+  assert.ok(input);
+  assert.equal(input.inputMode, "numeric");
+  await act(async () => Simulate.change(input, { target: { value } } as any));
+}
+
+test("an existing email code can be verified in the current app without sending another email", async () => {
+  await mount(guest, { page: "login", path: "/admin/login?next=%2Fcollect%2Fsetup" });
+  const send = mock.method(repository.getSupabaseClient().auth, "signInWithOtp", async () => { throw new Error("Must not resend"); });
+  const verify = mock.method(repository.getSupabaseClient().auth, "verifyOtp", async (payload: any) => {
+    assert.deepEqual(payload, { email: "admin@example.com", token: "12345678", type: "email" });
+    return { data: { session: { user: { id: "admin" } } }, error: null };
+  });
+  await enterExistingCode("1234 5678");
+  await act(async () => Simulate.submit(host.querySelector("form")!));
+  assert.equal(verify.mock.callCount(), 1);
+  assert.equal(send.mock.callCount(), 0);
+  assert.match(host.textContent ?? "", /正在确认管理员权限/);
+  assert.equal(host.querySelector("#location")?.textContent, "/admin/login?next=%2Fcollect%2Fsetup", "OTP response alone must not grant administrator access");
+});
+
+test("invalid and expired codes keep the user in the app and allow a corrected retry", async () => {
+  await mount(guest, { page: "login", path: "/admin/login?next=%2Fcollect%2Fsetup" });
+  const verify = mock.method(repository.getSupabaseClient().auth, "verifyOtp", async () => ({ data: { session: null }, error: new Error("Token expired") }));
+  await enterExistingCode("12ab");
+  await act(async () => Simulate.submit(host.querySelector("form")!));
+  assert.equal(verify.mock.callCount(), 0);
+  assert.match(host.querySelector('[role="alert"]')?.textContent ?? "", /完整数字验证码/);
+  const input = host.querySelector<HTMLInputElement>('input[autocomplete="one-time-code"]')!;
+  await act(async () => Simulate.change(input, { target: { value: "123456" } } as any));
+  await act(async () => Simulate.submit(host.querySelector("form")!));
+  assert.equal(verify.mock.callCount(), 1);
+  assert.equal(input.value, "123456");
+  assert.match(host.querySelector('[role="alert"]')?.textContent ?? "", /验证失败/);
+  verify.mock.mockImplementation(async () => ({ data: { session: { user: { id: "admin" } } }, error: null }));
+  await act(async () => Simulate.submit(host.querySelector("form")!));
+  assert.equal(verify.mock.callCount(), 2);
+  assert.equal(host.querySelector('[role="alert"]'), null);
+});
+
+test("failed email delivery does not switch to code entry or block retry", async () => {
+  await mount(guest, { page: "login", path: "/admin/login" });
+  mock.method(repository.getSupabaseClient().auth, "signInWithOtp", async () => ({ data: { user: null, session: null }, error: new Error("发送频率受限，请稍后重试") }));
+  await act(async () => Simulate.change(host.querySelector("input")!, { target: { value: "admin@example.com" } } as any));
+  await act(async () => Simulate.submit(host.querySelector("form")!));
+  assert.equal(host.querySelector('input[autocomplete="one-time-code"]'), null);
+  assert.equal(host.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled, false);
+  assert.match(host.querySelector('[role="alert"]')?.textContent ?? "", /发送频率受限/);
+});
+
+for (const role of ["admin", "reader"]) {
+  test(`email OTP waits for verified ${role} role before returning to the shared collection`, async () => {
+    await loadUI();
+    let signedIn = false;
+    const client = repository.getSupabaseClient();
+    mock.method(client.auth, "onAuthStateChange", (callback: typeof authCallback) => {
+      authCallback = callback;
+      return { data: { subscription: { unsubscribe() {} } } };
+    });
+    const readUser = mock.method(client.auth, "getUser", async () => ({ data: { user: signedIn ? { id: role, app_metadata: { role } } : null }, error: null }));
+    mock.method(client.auth, "verifyOtp", async () => {
+      signedIn = true;
+      const session = { user: { id: role, app_metadata: { role: "admin" } } };
+      authCallback("SIGNED_IN", session);
+      return { data: { session }, error: null };
+    });
+    const next = "/collect?" + new URLSearchParams({ url: "https://b23.tv/example", title: "手机收藏" });
+    const path = "/admin/login?next=" + encodeURIComponent(next);
+    host = document.createElement("div"); document.body.append(host); root = createRoot(host);
+    await act(async () => root!.render(React.createElement(authContext.AdminAuthProvider, null,
+      React.createElement(MemoryRouter, { initialEntries: [path] }, React.createElement(AdminLogin, { darkMode: false }), React.createElement(LocationProbe)))));
+    await enterExistingCode();
+    await act(async () => {
+      Simulate.submit(host.querySelector("form")!);
+      await new Promise(resolve => setTimeout(resolve, 20));
+    });
+    assert.ok(readUser.mock.callCount() >= 2);
+    assert.equal(host.querySelector("#location")?.textContent, role === "admin" ? next : path);
+    if (role === "reader") assert.match(host.textContent ?? "", /当前账号不是管理员/);
+  });
+}
 
 test("non-admin accounts can switch accounts but cannot access article management", async () => {
   let signOut = false;

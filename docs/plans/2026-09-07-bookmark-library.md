@@ -21,6 +21,7 @@
 3. 元信息和免登录收藏 API 沿用服务端 `SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY`，不要使用 `VITE_` 前缀。不需要平台 Cookie 或额外平台 API Key。
 4. Supabase Authentication → URL Configuration：Site URL 设置为 `https://octopus-wiki.vercel.app`，Redirect URLs 添加 `https://octopus-wiki.vercel.app/admin/login**`，保留本地 `http://localhost:3000/admin/login**`。收藏内容通过 `next` 返回，外站回跳会被拒绝。Magic Link 邮件使用 `{{ .ConfirmationURL }}`；修正配置后从线上重新发送邮件，旧邮件不会自动更新地址。
 5. 构建并部署到 Vercel，确认 `/api/collector`、`/api/bookmark-preview`、`/manifest.webmanifest`、`/collector-sw.js` 和两种 PNG 图标可访问。生产必须使用 HTTPS。`GET /api/collector` 无授权时返回 `authorized: false`；管理员启用授权可检查服务端配置和迁移是否完整。
+6. Supabase Authentication → Emails → Magic link or OTP：将 `supabase/templates/magic-link.html` 复制到 Body，同时保留 `{{ .Token }}` 验证码与 `{{ .ConfirmationURL }}` 链接。此模板需要单独保存到 Supabase，推送源码不会自动同步。
 
 `npm run dev` 只运行前端。真实收藏授权和元信息 API 联调使用 `npx vercel dev`。开发模式不注册 service worker，生产构建（含 `vite preview`）才会注册。
 
@@ -29,6 +30,8 @@
 电脑：打开 `/collect/setup`，首次登录管理员账号后点击「启用 90 天免登录收藏」，再将「收藏到 Octopus」拖到书签栏。以后浏览资源时点击，核对标题、选箱并保存。原有书签按钮无需更换。页面限制书签脚本时，复制链接后在 `/collect` 粘贴。
 
 Android：通过支持 Web Share Target 的浏览器安装 Octopus 收藏箱，再从原 App 的系统分享菜单选择它。若 App 仅显示自己的分享面板，找「更多」或复制分享文案后粘贴。创建桌面网页快捷方式不等于注册系统分享目标。
+
+安装后首次授权：打开安装好的应用 → 快捷收藏设置 → 管理员登录 → 发送验证码。到邮箱复制验证码，切回应用输入，登录后点击「启用 90 天免登录收藏」。不要依赖邮件链接打开安装版应用；它可能登录到另一个浏览器窗口。页面被系统重载时，填入同一邮箱并选择「已有验证码，直接输入」。若已点击并使用邮件链接，请重新发送邮件取得新验证码。
 
 iOS：网页粘贴可直接使用。`/collect/setup` 说明如何让快捷指令接收 URL/文本、URL 编码后打开 `/collect?text=...`。本次未创建、安装或在 iPhone 上验证快捷指令。
 

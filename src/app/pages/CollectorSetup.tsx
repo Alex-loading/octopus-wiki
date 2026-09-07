@@ -84,6 +84,9 @@ export function CollectorSetup({ darkMode }: { darkMode: boolean }) {
               从浏览器菜单选择「安装应用」或相应的安装入口，安装 Octopus
               收藏箱。
             </li>
+            <li>
+              打开安装好的应用，在快捷收藏设置中登录管理员邮箱。去邮箱复制验证码，切回本应用输入，验证后点击「启用 90 天免登录收藏」。
+            </li>
             <li>在原 App 打开系统分享菜单，选择「Octopus 收藏箱」。</li>
             <li>核对链接，选择或新建收藏箱，点击保存。</li>
           </ol>
