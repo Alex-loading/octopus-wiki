@@ -171,7 +171,7 @@ test("bookmarklet passes current URL and metadata without leaking session state"
       location: { href: "https://www.bilibili.com/video/BV123?foo=bar#part" },
       document: {
         title: "测试标题",
-        querySelector: () => ({ content: "/cover.jpg" }),
+        querySelector: (selector: string) => selector.includes('og:image') ? { content: "/cover.jpg" } : null,
       },
       window: {
         open: (href: string, target: string) => {
@@ -192,4 +192,23 @@ test("bookmarklet passes current URL and metadata without leaking session state"
     "https://www.bilibili.com/cover.jpg",
   );
   assert.equal(opened!.target, "octopus-collector");
+});
+test("bookmarklet reads Douyin metadata already rendered in the browser", () => {
+  let opened = "";
+  vm.runInNewContext(createBookmarklet("https://wiki.example").slice("javascript:".length), {
+    URL,
+    location: { href: "https://www.douyin.com/video/7681983811227372425" },
+    document: {
+      title: "抖音",
+      querySelector: (selector: string) => selector.includes("lark:url:video_title")
+        ? { content: "这哥们儿真男人！ - 抖音" }
+        : selector.includes("lark:url:video_cover_image_url")
+          ? { content: "https://p3-pc-sign.douyinpic.com/cover.jpeg?x-signature=abc%3D&x-expires=2104146000" }
+          : null,
+    },
+    window: { open: (href: string) => { opened = href; } },
+  });
+  const destination = new URL(opened);
+  assert.equal(destination.searchParams.get("title"), "这哥们儿真男人！ - 抖音");
+  assert.equal(destination.searchParams.get("cover"), "https://p3-pc-sign.douyinpic.com/cover.jpeg?x-signature=abc%3D&x-expires=2104146000");
 });

@@ -210,5 +210,5 @@ export function captureFromSearch(search: string): {
 
 export function createBookmarklet(origin: string): string {
   const target = new URL("/collect", parseBookmarkUrl(origin)).href;
-  return `javascript:(()=>{const u=new URL(${JSON.stringify(target)});u.searchParams.set('url',location.href);u.searchParams.set('title',document.title.slice(0,300));const c=document.querySelector('meta[property="og:image"]')?.content;if(c){try{u.searchParams.set('cover',new URL(c,location.href).href)}catch{}}window.open(u.href,'octopus-collector');})()`;
+  return `javascript:(()=>{const u=new URL(${JSON.stringify(target)});const m=(...names)=>names.map(n=>document.querySelector('meta[property="'+n+'"],meta[name="'+n+'"]')?.content).find(Boolean);u.searchParams.set('url',location.href);u.searchParams.set('title',(m('og:title','twitter:title','lark:url:video_title')||document.title).slice(0,300));const c=m('og:image','twitter:image','lark:url:video_cover_image_url');if(c){try{u.searchParams.set('cover',new URL(c,location.href).href)}catch{}}window.open(u.href,'octopus-collector');})()`;
 }

@@ -24,6 +24,15 @@ test("metadata parses reversed attributes, entities and relative images", () => 
     "",
   );
 });
+test("reads Douyin lark video metadata and preserves the signed cover URL", () => {
+  const cover = "https://p3-pc-sign.douyinpic.com/image-cut-tos-priv/a3b131e6390efd84edecaf8a65ecb90c~tplv-dy-resize-origshort-autoq-75:330.jpeg?biz_tag=pcweb_cover&from=327834062&lk3s=138a59ce&s=PackSourceEnum_AWEME_DETAIL&sc=cover&se=false&x-expires=2104146000&x-signature=GaVQ9afspV6VJLEtosb2YqJsYgI%3D";
+  const title = "这哥们儿真男人！#万岁山武侠城 #万岁山老嫂子 #老嫂子 #老嫂子欢乐大舞台 - 抖音";
+  const html = `<title>抖音</title>
+    <meta name="lark:url:video_title" content="${title}" data-rh="true">
+    <meta name="lark:url:video_cover_image_url" content="${cover.replaceAll("&", "&amp;")}" data-rh="true">`;
+  assert.deepEqual(parsePreviewHtml(html, "https://www.douyin.com/video/7681983811227372425"), { title, cover_url: cover });
+  assert.equal(parsePreviewHtml('<meta name="lark:url:video_cover_image_url" content="javascript:alert(1)">', "https://www.douyin.com").cover_url, "");
+});
 test("preview allows only known HTTPS hosts and validates every redirect before fetching it", async () => {
   for (const url of [
     "http://www.bilibili.com",

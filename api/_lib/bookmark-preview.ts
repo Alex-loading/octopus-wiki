@@ -97,13 +97,17 @@ export function parsePreviewHtml(
   const title = (
     values.get("og:title") ||
     values.get("twitter:title") ||
+    values.get("lark:url:video_title") ||
     decodeEntities(html.match(/<title\b[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? "")
   )
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 300);
   let cover_url = "";
-  const cover = values.get("og:image") || values.get("twitter:image");
+  const cover =
+    values.get("og:image") ||
+    values.get("twitter:image") ||
+    values.get("lark:url:video_cover_image_url");
   try {
     if (cover) {
       const url = parseBookmarkUrl(new URL(cover, pageUrl).href);
