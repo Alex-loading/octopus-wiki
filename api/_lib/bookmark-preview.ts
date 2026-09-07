@@ -1,4 +1,5 @@
 import { parseBookmarkUrl } from "../../src/app/content/bookmarks.ts";
+import { douyinVideoPage } from "./douyin-render-policy.ts";
 
 const PREVIEW_HOSTS = new Set([
   "bilibili.com",
@@ -111,6 +112,14 @@ export function parsePreviewHtml(
   try {
     if (cover) {
       const url = parseBookmarkUrl(new URL(cover, pageUrl).href);
+      // XHS publishes HTTP CDN covers with upgrade-insecure-requests on its page.
+      // These CDN images are available over HTTPS; keep the path/signature intact.
+      if (
+        url.protocol === "http:" &&
+        !url.port &&
+        url.hostname.endsWith(".xhscdn.com")
+      )
+        url.protocol = "https:";
       if (
         url.protocol === "https:" &&
         /[a-z]/i.test(url.hostname) &&
@@ -127,6 +136,8 @@ export function parsePreviewHtml(
 export async function fetchBookmarkPreview(
   value: string,
   fetcher: typeof fetch = fetch,
+  render: (url: string) => Promise<{ title: string; cover_url: string }> = async url =>
+    (await import("./douyin-preview.ts")).renderDouyinPreview(url),
 ): Promise<{ title: string; cover_url: string }> {
   let url = allowedPreviewUrl(value);
   const signal = AbortSignal.timeout(6500);
@@ -158,6 +169,13 @@ export async function fetchBookmarkPreview(
       await readBoundedText(response, 512 * 1024),
       url.href,
     );
+    if ((!preview.title || !preview.cover_url) && douyinVideoPage(url.href)) {
+      const rendered = await render(url.href);
+      return {
+        title: rendered.title || preview.title,
+        cover_url: rendered.cover_url || preview.cover_url,
+      };
+    }
     if (!preview.title && !preview.cover_url)
       throw new Error("未读取到标题或封面，可以手动填写后保存。");
     return preview;

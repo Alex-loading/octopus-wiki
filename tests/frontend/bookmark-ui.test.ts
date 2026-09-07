@@ -311,6 +311,20 @@ test("a bare video link previews the title and signed cover without sharing text
   assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, title);
   assert.equal((host.querySelector('[aria-label="封面链接"]') as HTMLInputElement).value, cover);
 });
+test("preview replaces an app-provided sharing title until the user edits it", async () => {
+  stubDatabase();
+  mock.method(repository.getSupabaseClient().auth, "getSession", async () => ({ data: { session: { access_token: "test" } }, error: null }));
+  mock.method(globalThis, "fetch", async () => Response.json({ success: true, data: { title: "这哥们儿真男人！#万岁山武侠城 - 抖音", cover_url: "https://p3-pc-sign.douyinpic.com/cover.jpeg" } }));
+  await mount(React.createElement(Form, {
+    collections: [box], onCollectionCreated() {}, onSaved() {},
+    initial: { url: "https://v.douyin.com/728lgXkTLvg/", title: "抖音", cover_url: "", collection_id: "", note: "", is_public: true },
+  }));
+  await click("读取标题与封面");
+  assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "这哥们儿真男人！#万岁山武侠城 - 抖音");
+  await change("标题", "我写的标题");
+  await click("读取标题与封面");
+  assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "我写的标题");
+});
 test("auto-filled share titles follow changed links, but successful preview respects manually edited titles", async () => {
   stubDatabase();
   mock.method(repository.getSupabaseClient().auth, "getSession", async () => ({ data: { session: { access_token: "test" } }, error: null }));

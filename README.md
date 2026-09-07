@@ -49,6 +49,13 @@
   API reuses the server-only Supabase variables; unsupported or blocked previews can be filled
   manually. Full content backup and synchronization with platform-native favorites are not included.
 
+  Link previews require Node.js 24 (`nvm use`). Xiaohongshu CDN covers published as HTTP are
+  upgraded to HTTPS. Douyin video pages without metadata in the initial HTML are rendered with
+  an isolated Chromium browser, then read for `lark:url:video_title` and
+  `lark:url:video_cover_image_url`. Vercel bundles Chromium and allows up to 60 seconds for the
+  two preview-capable APIs. For local development, macOS uses the installed Google Chrome;
+  other systems can set `BOOKMARK_CHROME_EXECUTABLE_PATH`. No browser login is required.
+
   Enable 90-day device authorization once at `/collect/setup` to collect from new windows
   without repeating administrator login. Saved bookmarklets do not update with website deployments;
   replace them from the setup page to pick up new metadata support. The scoped

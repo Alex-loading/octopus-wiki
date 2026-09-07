@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { after, before, test } from "node:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createServer, type ViteDevServer } from "vite";
 
 import { createElement, type ComponentType } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -9,13 +13,27 @@ type MarkdownRendererProps = {
   dm: boolean;
 };
 
+let server: ViteDevServer;
+const cacheDir = mkdtempSync(join(tmpdir(), "octopus-markdown-test-"));
+before(async () => {
+  server = await createServer({
+    configFile: false,
+    envFile: false,
+    cacheDir,
+    server: { middlewareMode: true, hmr: false, ws: false, watch: null },
+    optimizeDeps: { noDiscovery: true, include: [] },
+    esbuild: { jsx: "automatic" },
+    ssr: { noExternal: ["react-syntax-highlighter"] },
+  });
+});
+after(async () => {
+  await server.close();
+  rmSync(cacheDir, { recursive: true, force: true });
+});
+
 async function loadMarkdownRenderer(): Promise<ComponentType<MarkdownRendererProps>> {
-  let module: Record<string, unknown>;
-  try {
-    module = await import("../../src/app/components/MarkdownRenderer.tsx") as Record<string, unknown>;
-  } catch {
-    assert.fail("MarkdownRenderer component module is missing");
-  }
+  // Use the app's module loader for dependencies that publish bundler-oriented ESM.
+  const module = await server.ssrLoadModule("/src/app/components/MarkdownRenderer.tsx");
   assert.equal(
     typeof module.MarkdownRenderer,
     "function",

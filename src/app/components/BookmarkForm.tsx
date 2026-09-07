@@ -54,10 +54,8 @@ export function BookmarkForm({
   const live = useRef(true);
   const busy = useRef(false);
   const boxBusy = useRef(false);
-  const suggestedTitle = useRef(
-    !bookmarkId &&
-      (!initial.title || initial.title === parseBookmarkShare(initialText).title),
-  );
+  // Share targets may provide the app name as a title. Only user edits are final.
+  const suggestedTitle = useRef(!bookmarkId);
   useEffect(() => {
     live.current = true;
     return () => {
