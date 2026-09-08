@@ -2,6 +2,9 @@ import { Link } from "react-router";
 import { motion } from "motion/react";
 import { Clock, Heart, ArrowUpRight, Tag } from "lucide-react";
 import { Post } from "../data/posts";
+import { ArticleImage } from "./ArticleImage";
+
+const MotionArticleImage = motion.create(ArticleImage);
 
 interface PostCardProps {
   post: Post;
@@ -26,9 +29,10 @@ export function PostCard({ post, darkMode, index = 0, variant = "default" }: Pos
       >
         <Link to={`/post/${post.slug}`} className="block">
           <div className="relative h-56 overflow-hidden">
-            <motion.img
+            <MotionArticleImage
               src={post.coverImage}
               alt={post.title}
+              loading={index < 2 ? "eager" : "lazy"}
               className="w-full h-full object-cover"
               whileHover={{ scale: 1.06 }}
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -91,9 +95,12 @@ export function PostCard({ post, darkMode, index = 0, variant = "default" }: Pos
         }`}
       >
         <Link to={`/post/${post.slug}`} className="flex items-start gap-4 flex-1">
-          <img
+          <ArticleImage
             src={post.coverImage}
             alt={post.title}
+            loading="lazy"
+            width={64}
+            height={56}
             className="w-16 h-14 object-cover rounded-xl shrink-0"
           />
           <div className="flex-1 min-w-0">
@@ -126,9 +133,12 @@ export function PostCard({ post, darkMode, index = 0, variant = "default" }: Pos
     >
       <Link to={`/post/${post.slug}`} className="flex gap-5 flex-1 min-w-0">
         <div className="relative overflow-hidden rounded-xl shrink-0 w-28 h-24">
-          <motion.img
+          <MotionArticleImage
             src={post.coverImage}
             alt={post.title}
+            loading={index < 3 ? "eager" : "lazy"}
+            width={112}
+            height={96}
             className="w-full h-full object-cover"
             whileHover={{ scale: 1.08 }}
             transition={{ duration: 0.5 }}

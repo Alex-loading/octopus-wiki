@@ -1,5 +1,6 @@
 import type { FeishuClient } from "./_lib/feishu.ts";
 import { createFeishuClientFromEnv, FeishuError } from "./_lib/feishu.ts";
+import { optimizeFeishuImage } from "./_lib/image-optimization.ts";
 import {
   isFeishuMediaType,
   verifyMediaRequest,
@@ -23,15 +24,21 @@ export function createFeishuMediaHandler(dependencies: MediaHandlerDependencies)
     const token = params.get("token")?.trim() ?? "";
     const type = params.get("type")?.trim() ?? "";
     const signature = params.get("sig")?.trim() ?? "";
+    const format = params.get("format");
 
     if (!isFeishuMediaType(type) || !verifyMediaRequest(token, type, signature, dependencies.secret)) {
       return jsonError("INVALID_MEDIA_SIGNATURE", "媒体链接无效或已被篡改。", 403);
     }
 
+    if (format !== null && (format !== "webp-lossless-v1" || type === "file")) {
+      return jsonError("INVALID_MEDIA_FORMAT", "不支持的图片转换格式。", 400);
+    }
+
     try {
-      const upstream = await dependencies.client.downloadMedia(token, type);
+      const original = await dependencies.client.downloadMedia(token, type);
+      const upstream = format === "webp-lossless-v1" ? await optimizeFeishuImage(original) : original;
       const headers = new Headers({
-        "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+        "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
         "Content-Type": upstream.headers.get("Content-Type") ?? "application/octet-stream",
       });
       for (const name of ["Content-Length", "ETag", "Last-Modified"]) {

@@ -90,6 +90,6 @@ test("media GET rejects a tampered signature and streams authorized media", asyn
   ));
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("Content-Type"), "image/png");
-  assert.equal(response.headers.get("Cache-Control"), "public, s-maxage=86400, stale-while-revalidate=604800");
+  assert.equal(response.headers.get("Cache-Control"), "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800");
   assert.equal(await response.text(), "bytes");
 });

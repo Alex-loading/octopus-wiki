@@ -13,6 +13,7 @@ import {
   List,
 } from "lucide-react";
 import { MarkdownRenderer } from "../components/MarkdownRenderer";
+import { ArticleImage } from "../components/ArticleImage";
 import { CommentDeleteButton } from "../components/CommentDeleteButton";
 import { OctopusAvatar } from "../components/OctopusAvatar";
 import { resolveAuthorName } from "../content/articleAuthor";
@@ -37,6 +38,8 @@ import type { Post as PostItem } from "../data/posts";
 interface PostProps {
   darkMode: boolean;
 }
+
+const MotionArticleImage = motion.create(ArticleImage);
 
 interface Heading {
   id: string;
@@ -412,9 +415,10 @@ export function Post({ darkMode }: PostProps) {
         animate={{ opacity: 1 }}
         className="relative h-[45vh] overflow-hidden"
       >
-        <motion.img
+        <MotionArticleImage
           src={post.coverImage}
           alt={post.title}
+          loading="eager"
           className="w-full h-full object-cover"
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
@@ -623,9 +627,10 @@ export function Post({ darkMode }: PostProps) {
                         : "border-gray-100 hover:border-gray-200 bg-gray-50/50"
                         }`}
                     >
-                      <img
+                      <ArticleImage
                         src={rp.coverImage}
                         alt={rp.title}
+                        loading="lazy"
                         className="w-14 h-12 object-cover rounded-lg shrink-0"
                       />
                       <div className="flex-1 min-w-0">

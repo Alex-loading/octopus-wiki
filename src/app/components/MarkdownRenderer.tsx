@@ -12,6 +12,7 @@ import {
   oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Check, Copy, ImageOff } from "lucide-react";
+import { ArticleImage } from "./ArticleImage";
 
 const CALLOUT_CLASS_PATTERN = /^callout$/;
 const CALLOUT_EMOJI_CLASS_PATTERN = /^callout-emoji$/;
@@ -166,7 +167,7 @@ function MarkdownImage({
 
   return (
     <span className="my-6 block overflow-hidden rounded-xl">
-      <img
+      <ArticleImage
         data-article-image="true"
         src={src}
         alt={alt ?? ""}

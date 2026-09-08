@@ -92,8 +92,24 @@
   access each linked document.
 
   Public linked articles are refreshed through `/api/feishu-content` with a 60-second CDN cache.
-  Images and attachments are streamed through signed `/api/feishu-media` URLs. Running a local
-  `feishu2md` process, storing a `configId`, and configuring OBS are no longer required.
+  Images and attachments use signed `/api/feishu-media` URLs. Article images use `<picture>`
+  to request a separate `format=webp-lossless-v1` URL in WebP-capable browsers, with the original
+  URL as a compatibility and request-failure fallback. Existing article records need no migration.
+  The Function attempts lossless WebP only for static 8-bit RGB/RGBA PNGs using ordinary sRGB
+  colour information, up to 4 MiB and 6 million pixels. It preserves the resolution and compares
+  decoded RGBA pixels, including transparent pixels; only a smaller, identical result is used.
+  JPEGs, animations, colour-profiled/high-depth images, unsupported PNGs and conversion failures
+  return the original. Larger images and attachments retain the streaming path.
+
+  Both URLs use the existing Vercel CDN (24 hours, with 7 days stale-while-revalidate) plus a
+  1-hour browser cache. No object storage, database image blobs or new service configuration is
+  required. A CDN miss still downloads from Feishu and may encode; caches can be evicted, so
+  conversion is not guaranteed to happen only once. The format is part of the URL, avoiding
+  `Accept`-dependent CDN variants; increment its version when changing the encoding policy.
+  Replacing a Feishu image normally gives it a new media token/URL; same-token content updates
+  remain subject to the cache lifetimes. List covers below the initial rows load lazily.
+
+  Running a local `feishu2md` process, storing a `configId`, and configuring OBS are not required.
 
   For local end-to-end verification, use `npx vercel dev` so both Vite pages and `/api` Functions
   run on the same origin. Plain `npm run dev` starts only Vite and is suitable for frontend-only
