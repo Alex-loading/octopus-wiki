@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 6 24 24" shape-rendering="crispEdges">
+  <title>Octopus</title>
+  <!-- Matches the header's everyday OctopusAvatar, with a transparent background. -->
+  <g fill="#818CF8">
+    <path d="M12 7h8v2h3v3h2v8h-2v3h-2v-2h-2v3h-2v-3h-2v3h-2v-3h-2v2H9v-3H7v-8h2V9h3z" />
+    <path d="M7 19H5v6h4v-2H7zm18 0h2v6h-4v-2h2zM9 23h2v4H7v-2h2zm14 0h-2v4h4v-2h-2zM13 24h2v4h-4v-2h2zm6 0h-2v4h4v-2h-2z" />
+  </g>
+  <path d="M12 9h7v1h-7zm-2 2h2v2h-2z" fill="#FFFFFF" opacity=".22" />
+  <g fill="#34312E">
+    <path d="M11 14h2v3h-2zm8 0h2v3h-2z" />
+    <path d="M14 19h1v1h2v-1h1v2h-4z" />
+  </g>
+</svg>
