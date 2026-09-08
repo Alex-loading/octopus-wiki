@@ -1,0 +1,26 @@
+.wonder-filters { grid-template-columns: 2fr 1fr; }
+.wonder-editor { border: 1px solid var(--bk-line); border-radius: 18px; padding: 24px; background: var(--bk-surface); }
+.wonder-editor > h2 { font-size: 20px; margin-bottom: 20px; }
+.wonder-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.wonder-form-grid > label { min-width: 0; }
+.wonder-form-grid > div { min-width: 0; }
+.wonder-icon-trigger { width: 100%; height: 44px; margin-top: 8px; border: 1px solid var(--bk-line); border-radius: 9px; background: var(--bk-bg); color: var(--bk-text); font-size: 13px; padding: 11px 13px; }
+.wonder-colors { display: flex; flex-wrap: wrap; gap: 20px; align-items: end; }
+.wonder-colors input[type="color"] { width: 80px; height: 40px; padding: 4px; }
+.wonder-cover-preview { width: 120px; height: 70px; border-radius: 10px; display: grid; place-items: center; color: white; font-size: 32px; }
+.wonder-admin-list { display: grid; gap: 12px; }
+.wonder-result-count { font-size: 13px; color: var(--bk-muted); }
+.wonder-admin-item { display: flex; align-items: center; gap: 20px; padding: 20px; border: 1px solid var(--bk-line); border-radius: 16px; background: var(--bk-surface); }
+.wonder-item-icon { width: 64px; height: 64px; flex-shrink: 0; display: grid; place-items: center; border-radius: 12px; color: white; font-size: 28px; }
+.wonder-item-copy { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.wonder-item-copy h2 { font-size: 16px; font-weight: 500; }
+.wonder-item-copy p { font-size: 13px; margin: 5px 0 8px; color: var(--bk-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wonder-item-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--bk-muted); }
+@media (max-width: 640px) {
+  .wonder-filters { grid-template-columns: 1fr; }
+  .wonder-editor { padding: 18px; }
+  .wonder-form-grid { grid-template-columns: 1fr; }
+  .wonder-admin-item { gap: 12px; flex-wrap: wrap; padding: 16px; }
+  .wonder-item-icon { width: 48px; height: 48px; }
+  .wonder-admin-item > .bookmark-form-actions { width: 100%; justify-content: flex-end; }
+}

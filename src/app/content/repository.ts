@@ -4,7 +4,7 @@ import type { Post } from "../data/posts";
 import { resolveAuthorAvatar } from "./articleAuthor";
 import { posts as staticPosts } from "../data/posts";
 import type { Demo } from "../data/demos";
-import { demos as staticDemos } from "../data/demos";
+import { resolveDemoLinks, validateDemoDraft, type DemoDraft } from "./demos";
 import {
   fetchLiveArticleContent,
   previewFeishuDocument,
@@ -71,6 +71,8 @@ type DemoRow = {
   date?: string | null;
   demo_url?: string | null;
   repo_url?: string | null;
+  project_url?: string | null;
+  is_public?: boolean;
 };
 
 const DEFAULT_COVER =
@@ -205,23 +207,21 @@ function normalizeDemo(row: DemoRow): Demo {
     slug: row.slug,
     title: row.title,
     description: row.description ?? "",
-    longDescription: row.long_description ?? row.description ?? "",
+    longDescription: row.long_description ?? "",
     category: row.category ?? "工具",
     tags: row.tags ?? [],
     techStack: row.tech_stack ?? [],
     status: row.status ?? "planned",
     colors: row.colors ?? ["#64748b", "#475569"],
     icon: row.icon ?? "✦",
-    date: row.date ?? new Date().toISOString().slice(0, 7),
+    date: row.date ?? "",
+    ...resolveDemoLinks(row),
+    isPublic: row.is_public === true,
   };
 }
 
 function fallbackArticles(): Post[] {
   return staticPosts;
-}
-
-function fallbackDemos(): Demo[] {
-  return staticDemos;
 }
 
 export async function listArticles(): Promise<Post[]> {
@@ -372,31 +372,74 @@ export async function deleteArticleComment(
   }
 }
 
-export async function listDemos(): Promise<Demo[]> {
-  if (!shouldReadFromDatabase || !supabase) {
-    return fallbackDemos();
+const DEMO_SELECT_FIELDS = "id,slug,title,description,long_description,category,tags,tech_stack,status,colors,icon,date,demo_url,repo_url,project_url,is_public";
+
+function demoClient() {
+  if (!supabase) throw new Error("妙妙屋服务尚未配置，请配置 Supabase。");
+  return supabase;
+}
+
+async function adminDemoClient() {
+  const db = demoClient();
+  const role = await getUserRoleState();
+  if (!role.authenticated || !role.isAdmin) throw new Error("请先登录管理员账号。");
+  return db;
+}
+
+function failDemo(error: { code?: string; message?: string } | null) {
+  if (!error) return;
+  if (["42P01", "42703", "PGRST204", "PGRST205"].includes(error.code ?? ""))
+    throw new Error("妙妙屋数据表尚未就绪，请先应用 009_wonder_room.sql 迁移。");
+  if (error.code === "42501") throw new Error("没有操作权限，请重新登录管理员账号。");
+  if (error.code === "23505") throw new Error("项目标识已存在，请重试。");
+  throw new Error(error.message || "妙妙屋服务暂时不可用，请稍后重试。");
+}
+
+export async function listDemos(admin = false): Promise<Demo[]> {
+  const db = admin ? await adminDemoClient() : demoClient();
+  const output: Demo[] = [];
+  for (let offset = 0; ; offset += 500) {
+    let query = db.from("demos").select(DEMO_SELECT_FIELDS)
+      .order("date", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false }).order("id")
+      .range(offset, offset + 499);
+    // Public pages must show the same records even when an admin is signed in.
+    if (!admin) query = query.eq("is_public", true);
+    const { data, error } = await query;
+    failDemo(error);
+    output.push(...((data ?? []) as DemoRow[]).map(normalizeDemo));
+    if (!data || data.length < 500) return output;
   }
+}
 
-  const { data, error } = await supabase
-    .from("demos")
-    .select("id,slug,title,description,long_description,category,tags,tech_stack,status,colors,icon,date,demo_url,repo_url")
-    .order("date", { ascending: false, nullsFirst: false });
+export async function saveDemo(draft: DemoDraft, id?: string): Promise<Demo> {
+  const payload = validateDemoDraft(draft);
+  const db = await adminDemoClient();
+  const query = id ? db.from("demos").update(payload).eq("id", id)
+    : db.from("demos").insert({ ...payload, slug: crypto.randomUUID() });
+  const { data, error } = await query.select(DEMO_SELECT_FIELDS).single();
+  failDemo(error);
+  return normalizeDemo(data as DemoRow);
+}
 
-  if (error || !data) {
-    return fallbackDemos();
-  }
-
-  return (data as DemoRow[]).map(normalizeDemo);
+export async function deleteDemo(id: string): Promise<void> {
+  const db = await adminDemoClient();
+  const { data, error } = await db.from("demos").delete().eq("id", id).select("id");
+  failDemo(error);
+  if (!data?.length) throw new Error("项目不存在或没有删除权限，请刷新后重试。");
 }
 
 export async function listDemosByArticle(articleSlug: string): Promise<Demo[]> {
-  if (!shouldReadFromDatabase || !supabase) {
+  if (!supabase) {
     return [];
   }
 
   const { data, error } = await supabase
     .from("article_demos")
-    .select("order_index,demos(id,slug,title,description,long_description,category,tags,tech_stack,status,colors,icon,date,demo_url,repo_url),articles!inner(slug)")
+    .select(`order_index,demos!inner(${DEMO_SELECT_FIELDS}),articles!inner(slug)` )
+    .eq("demos.is_public", true)
+    .eq("articles.status", "published")
+    .is("articles.deleted_at", null)
     .eq("articles.slug", articleSlug)
     .order("order_index", { ascending: true });
 

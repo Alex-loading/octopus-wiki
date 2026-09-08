@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from "motion/react";
 import { ArrowRight, Sparkles, Rss } from "lucide-react";
 import { listArticles } from "../content/repository";
 import type { Post } from "../data/posts";
-import { demos } from "../data/demos";
+import { useDemos } from "../content/useDemos";
 import { PostCard } from "../components/PostCard";
 
 const TAGLINE_WORDS = ["思考", "探索", "创造", "记录", "分享"];
@@ -79,7 +79,8 @@ export function Home({ darkMode }: HomeProps) {
   const recentPosts = posts.slice(0, 5);
   const articleCount = posts.length;
   const categoryCount = new Set(posts.map((post) => post.category)).size;
-  const demoCount = demos.length;
+  const projects = useDemos();
+  const demoCount = projects.loading || projects.error ? "—" : projects.demos.length;
 
   return (
     <div className={`min-h-screen ${dm ? "bg-gray-950" : "bg-white"}`}>
@@ -194,7 +195,7 @@ export function Home({ darkMode }: HomeProps) {
             {[
               { value: articleCount, label: "篇文章" },
               { value: categoryCount, label: "个分类" },
-              { value: demoCount, label: "个技术实验" },
+              { value: demoCount, label: "个妙妙屋项目" },
             ].map((stat) => (
               <div key={stat.label}>
                 <div className={`text-2xl font-semibold ${dm ? "text-white" : "text-gray-900"}`}>

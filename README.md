@@ -32,6 +32,12 @@
   Login emails return to `/admin/login?next=...`; the app validates the session and returns to the requested same-site page. Unknown/external return paths fall back to `/admin/articles`. Login does not auto-create accounts: use an existing administrator user. The hidden entry is not an access-control mechanism; repository, server and RLS authorization checks remain in place.
   This navigation/session update requires no new database migration (comment deletion still requires migration `005`).
 
+  ## 妙妙屋
+
+  前台入口保持 `/lab`，管理员通过 `/admin/demos` 新增、编辑和删除项目，设置公开状态。部署链接和 GitHub 链接分别填写，均为选填；详情只显示已填写的「部署链接」/「GitHub 仓库」按钮，在新标签页打开。卡片统一使用「了解更多」。
+
+  部署前应用 `database/migrations/009_wonder_room.sql`。前台列表、分类和首页项目数量均读取真实公开记录；无数据展示空状态，读取失败可重试。参见 [妙妙屋使用与验证](docs/plans/2026-09-08-wonder-room.md)。
+
   ## Cross-platform bookmark library
 
   Public bookmarks live at `/collections`; administrators use `/collect` to save links and

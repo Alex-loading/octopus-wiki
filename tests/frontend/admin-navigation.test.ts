@@ -114,6 +114,7 @@ test("repository persists auth only in configured tab storage and local signout 
 test("readers see a pixel octopus, no management links, and a five-click login entry", async () => {
   await mount(guest);
   assert.equal(host.querySelector('a[href="/admin/articles"]'), null);
+  assert.equal(host.querySelector('a[href="/admin/demos"]'), null);
   const logo = host.querySelector<HTMLButtonElement>('button[aria-label="Octopus"]');
   assert.ok(logo);
   assert.ok(logo.querySelector('svg[shape-rendering="crispEdges"]'));
@@ -131,9 +132,11 @@ test("verified admins see crowned artwork and article links in desktop and mobil
   let signedOut = false;
   await mount(admin, { signOut: async () => { signedOut = true; } });
   assert.equal(host.querySelectorAll('a[href="/admin/articles"]').length, 1);
+  assert.equal(host.querySelectorAll('a[href="/admin/demos"]').length, 1);
   assert.ok(host.querySelector('[data-admin-crown="true"]'));
   await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="打开菜单"]')!.click());
   assert.equal(host.querySelectorAll('a[href="/admin/articles"]').length, 2);
+  assert.equal(host.querySelectorAll('a[href="/admin/demos"]').length, 2);
   window.confirm = () => false;
   const logo = host.querySelector<HTMLButtonElement>('button[aria-label="退出管理员模式"]')!;
   await act(async () => logo.click());
@@ -146,6 +149,7 @@ test("verified admins see crowned artwork and article links in desktop and mobil
 test("unverified admin metadata never exposes management navigation", async () => {
   await mount({ ...admin, checking: true });
   assert.equal(host.querySelector('a[href="/admin/articles"]'), null);
+  assert.equal(host.querySelector('a[href="/admin/demos"]'), null);
   assert.equal(host.querySelector('[data-admin-crown="true"]'), null);
 });
 

@@ -55,11 +55,12 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
     { href: "/", label: "首页" },
     { href: "/blog", label: "文章" },
     { href: "/collections", label: "收藏", icon: Bookmark },
-    { href: "/lab", label: "实验室", icon: FlaskConical },
+    { href: "/lab", label: "妙妙屋", icon: FlaskConical },
     { href: "/about", label: "关于" },
   ];
   if (isAdmin) navLinks.push({ href: "/admin/articles", label: "文章管理", icon: FilePenLine });
   if (isAdmin) navLinks.push({ href: "/admin/bookmarks", label: "收藏管理", icon: Bookmark });
+  if (isAdmin) navLinks.push({ href: "/admin/demos", label: "妙妙屋管理", icon: FlaskConical });
 
   const isActive = (href: string) => {
     if (href === "/") return location.pathname === "/";
@@ -79,7 +80,7 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
             : "bg-transparent"
           }`}
       >
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className={`mx-auto px-6 h-16 flex items-center justify-between gap-4 ${isAdmin ? "max-w-7xl" : "max-w-5xl"}`}>
           {/* Logo */}
           <div className="relative flex shrink-0 items-center gap-2">
             <motion.button
@@ -102,13 +103,13 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
           </div>
 
           {/* Desktop nav */}
-          <nav aria-label="主导航" className="hidden lg:flex items-center gap-1">
+          <nav aria-label="主导航" className={`hidden items-center gap-1 ${isAdmin ? "xl:flex" : "lg:flex"}`}>
             {navLinks.map((link) => (
               <Link key={link.href} to={link.href}>
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  className={`relative px-2.5 py-2 rounded-lg text-sm transition-colors flex items-center gap-1.5 ${isActive(link.href)
+                  className={`relative whitespace-nowrap px-2.5 py-2 rounded-lg text-sm transition-colors flex items-center gap-1.5 ${isActive(link.href)
                       ? darkMode
                         ? "text-white"
                         : "text-gray-900"
@@ -204,7 +205,7 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
               aria-label={menuOpen ? "关闭菜单" : "打开菜单"}
               aria-expanded={menuOpen}
               aria-controls="mobile-navigation"
-              className={`lg:hidden p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-white/10 text-gray-300" : "hover:bg-gray-100 text-gray-600"
+              className={`${isAdmin ? "xl:hidden" : "lg:hidden"} p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-white/10 text-gray-300" : "hover:bg-gray-100 text-gray-600"
                 }`}
             >
               <AnimatePresence mode="wait">
@@ -231,7 +232,7 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className={`fixed top-16 left-0 right-0 z-40 lg:hidden border-b ${darkMode
+            className={`fixed top-16 left-0 right-0 z-40 ${isAdmin ? "xl:hidden" : "lg:hidden"} border-b ${darkMode
                 ? "bg-gray-950/95 backdrop-blur-xl border-white/5"
                 : "bg-white/95 backdrop-blur-xl border-black/5"
               }`}

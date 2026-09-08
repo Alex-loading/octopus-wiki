@@ -1,5 +1,13 @@
 # 数据库初始化与迁移
 
+## 妙妙屋迁移
+
+`009_wonder_room.sql` 在已有 `demos` 表上新增可选项目链接和公开开关，启用公开只读与管理员增删改的 RLS，并自动更新时间。已有环境先应用此迁移再部署前端；不插入任何演示项目。首次执行兼容旧部署/仓库地址，重复执行不会恢复已清空的项目链接。
+
+新版前端将部署链接与 GitHub 链接拆为两个选填项，复用 `001` 已有的 `demo_url`、`repo_url`，无需追加迁移。旧 `project_url` 在读取时兼容，保存时转入对应字段并清空旧值。
+
+`scripts/db/verify-wonder-room.sql` 验证公开/私密可见性、游客和普通账号禁止写入、两种管理员声明、链接校验与删除，测试数据在事务结束后回滚。操作说明见 [妙妙屋管理](../../docs/plans/2026-09-08-wonder-room.md)。
+
 ## 收藏箱迁移
 
 收藏功能新增 `database/migrations/007_bookmarks.sql`，创建独立的 `bookmark_collections` 和 `bookmarks` 表；`008_bookmark_capture_devices.sql` 创建仅服务端可访问的设备授权表。不修改文章数据。已运行 007 的环境仅补 008。

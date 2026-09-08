@@ -1,17 +1,20 @@
 import { useState, useMemo } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { useDemos } from "../content/useDemos";
 import { motion, AnimatePresence } from "motion/react";
 import {
   FlaskConical,
   ExternalLink,
+  GitBranch,
   X,
   Sparkles,
   Clock,
   Layers,
   ChevronRight,
-  Zap,
 } from "lucide-react";
-import { demos, demoCategories, Demo } from "../data/demos";
+import type { Demo } from "../data/demos";
 import { PROFILE } from "../data/profile";
+import { DemoIcon } from "../components/DemoIcon";
 
 interface LabProps {
   darkMode: boolean;
@@ -51,7 +54,7 @@ function StatusBadge({ status }: { status: Demo["status"] }) {
   );
 }
 
-function DemoCardVisual({ demo, dm }: { demo: Demo; dm: boolean }) {
+function DemoCardVisual({ demo }: { demo: Demo }) {
   return (
     <div
       className="relative h-36 overflow-hidden"
@@ -75,12 +78,7 @@ function DemoCardVisual({ demo, dm }: { demo: Demo; dm: boolean }) {
       <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full bg-white/10" />
       {/* Main icon */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span
-          className="text-5xl text-white/25 font-mono select-none"
-          style={{ fontWeight: 100, letterSpacing: "-0.05em" }}
-        >
-          {demo.icon}
-        </span>
+        <DemoIcon value={demo.icon} size={56} className="text-white/50" />
       </div>
       {/* Status badge */}
       <div className="absolute top-3 right-3">
@@ -123,7 +121,7 @@ function DemoCard({
           : "bg-white border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200"
       }`}
     >
-      <DemoCardVisual demo={demo} dm={dm} />
+      <DemoCardVisual demo={demo} />
 
       <div className="flex-1 p-5 flex flex-col">
         <div className="flex items-start justify-between gap-3 mb-2">
@@ -176,26 +174,13 @@ function DemoCard({
             whileTap={{ scale: 0.96 }}
             onClick={() => onOpen(demo)}
             className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
-              demo.status === "live"
-                ? dm
-                  ? "bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30"
-                  : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
-                : dm
-                ? "bg-white/5 text-gray-500 hover:bg-white/10"
-                : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+              dm
+                ? "bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30"
+                : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
             }`}
           >
-            {demo.status === "live" ? (
-              <>
-                <Zap size={11} />
-                查看 Demo
-              </>
-            ) : (
-              <>
-                <ChevronRight size={11} />
-                了解更多
-              </>
-            )}
+            <ChevronRight size={11} />
+            了解更多
           </motion.button>
         </div>
       </div>
@@ -213,6 +198,8 @@ function DemoModal({
   onClose: () => void;
 }) {
   return (
+    <Dialog.Root open onOpenChange={open => { if (!open) onClose(); }}>
+    <Dialog.Portal>
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -222,18 +209,19 @@ function DemoModal({
       onClick={onClose}
     >
       {/* Backdrop */}
-      <div
+      <Dialog.Overlay asChild><div
         className={`absolute inset-0 backdrop-blur-md ${
           dm ? "bg-gray-950/80" : "bg-white/80"
         }`}
-      />
+      /></Dialog.Overlay>
 
+      <Dialog.Content asChild>
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className={`relative w-full max-w-xl rounded-2xl overflow-hidden border shadow-2xl ${
+        className={`relative w-full max-w-xl max-h-[85dvh] overflow-y-auto rounded-2xl outline-none border shadow-2xl ${
           dm
             ? "bg-gray-900 border-white/10"
             : "bg-white border-gray-200 shadow-gray-200/50"
@@ -258,40 +246,14 @@ function DemoModal({
           <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10" />
           <div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/10" />
 
-          {/* Demo preview area for live demos */}
-          {demo.status === "live" ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div
-                animate={{
-                  scale: [1, 1.05, 1],
-                  opacity: [0.6, 0.9, 0.6],
-                }}
-                transition={{ duration: 3, repeat: Infinity }}
-                className="text-6xl text-white/40 font-mono select-none"
-                style={{ fontWeight: 100 }}
-              >
-                {demo.icon}
-              </motion.div>
-              <div className="absolute bottom-4 left-0 right-0 text-center">
-                <span className="text-xs text-white/60 bg-black/20 backdrop-blur-sm px-3 py-1 rounded-full">
-                  完整 Demo 即将开放 · Coming Soon
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center flex-col gap-2">
-              <span className="text-5xl text-white/30 font-mono select-none">
-                {demo.icon}
-              </span>
-              <span className="text-sm text-white/50">
-                {demo.status === "wip" ? "开发中..." : "敬请期待"}
-              </span>
-            </div>
-          )}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <DemoIcon value={demo.icon} size={64} className="text-white/60" />
+          </div>
 
           {/* Close button */}
           <button
             onClick={onClose}
+            aria-label="关闭项目详情"
             className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center text-white/70 hover:text-white hover:bg-black/40 transition-all"
           >
             <X size={14} />
@@ -301,23 +263,42 @@ function DemoModal({
         {/* Content */}
         <div className="p-6">
           <div className="flex items-start justify-between gap-4 mb-3">
-            <h2
+            <Dialog.Title asChild><h2
               className={`text-xl font-medium ${
                 dm ? "text-white" : "text-gray-900"
               }`}
             >
               {demo.title}
-            </h2>
+            </h2></Dialog.Title>
             <StatusBadge status={demo.status} />
           </div>
 
-          <p
-            className={`text-sm leading-relaxed mb-5 ${
+          <Dialog.Description asChild><p
+            className={`text-sm leading-relaxed whitespace-pre-wrap break-words mb-5 ${
               dm ? "text-gray-400" : "text-gray-600"
             }`}
           >
-            {demo.longDescription}
-          </p>
+            {demo.longDescription || demo.description}
+          </p></Dialog.Description>
+
+          {(demo.deploymentUrl || demo.githubUrl) && (
+            <div className="flex flex-wrap gap-3 mb-5">
+              {demo.deploymentUrl && (
+                <a href={demo.deploymentUrl} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm text-white hover:bg-indigo-500">
+                  <ExternalLink size={14} />
+                  部署链接
+                </a>
+              )}
+              {demo.githubUrl && (
+                <a href={demo.githubUrl} target="_blank" rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm ${dm ? "border-white/15 text-gray-200 hover:bg-white/5" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}>
+                  <GitBranch size={14} />
+                  GitHub 仓库
+                </a>
+              )}
+            </div>
+          )}
 
           {/* Tech stack */}
           <div className="mb-5">
@@ -360,19 +341,24 @@ function DemoModal({
           </div>
         </div>
       </motion.div>
+      </Dialog.Content>
     </motion.div>
+    </Dialog.Portal>
+    </Dialog.Root>
   );
 }
 
 export function Lab({ darkMode }: LabProps) {
   const dm = darkMode;
+  const { demos, loading, error, refresh } = useDemos();
+  const demoCategories = useMemo(() => ["全部", ...new Set(demos.map(demo => demo.category).filter(category => category !== "全部"))], [demos]);
   const [selectedCategory, setSelectedCategory] = useState("全部");
   const [selectedDemo, setSelectedDemo] = useState<Demo | null>(null);
 
   const filtered = useMemo(() => {
     if (selectedCategory === "全部") return demos;
     return demos.filter((d) => d.category === selectedCategory);
-  }, [selectedCategory]);
+  }, [selectedCategory, demos]);
 
   const liveCount = demos.filter((d) => d.status === "live").length;
   const wipCount = demos.filter((d) => d.status === "wip").length;
@@ -399,17 +385,17 @@ export function Lab({ darkMode }: LabProps) {
             >
               <FlaskConical size={15} />
             </motion.div>
-            技术实验室
+            灵感与创造
           </div>
           <h1
             className={`text-4xl font-light tracking-tight mb-3 ${
               dm ? "text-white" : "text-gray-900"
             }`}
           >
-            实验室
+            妙妙屋
           </h1>
           <p className={`${dm ? "text-gray-400" : "text-gray-500"}`}>
-            这里是我的技术游乐场——探索有趣的算法、视觉效果与交互概念的地方。
+            收纳灵感、动手创造，这里放着我做的有趣项目。
           </p>
 
           {/* Stats */}
@@ -417,7 +403,7 @@ export function Lab({ darkMode }: LabProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="flex items-center gap-6 mt-6"
+            className="flex flex-wrap items-center gap-x-6 gap-y-3 mt-6"
           >
             {[
               {
@@ -437,13 +423,13 @@ export function Lab({ darkMode }: LabProps) {
               },
               {
                 value: demos.length,
-                label: "全部实验",
+                label: "全部项目",
                 color: dm ? "text-white" : "text-gray-900",
               },
             ].map((stat) => (
               <div key={stat.label} className="flex items-center gap-2">
                 <span className={`text-xl font-medium ${stat.color}`}>
-                  {stat.value}
+                  {loading || error ? "—" : stat.value}
                 </span>
                 <span
                   className={`text-sm ${
@@ -505,9 +491,24 @@ export function Lab({ darkMode }: LabProps) {
             }`}
           >
             <Sparkles size={11} />
-            {filtered.length} 个实验
+            {loading || error ? "—" : filtered.length} 个项目
           </span>
         </motion.div>
+
+        {loading ? (
+          <p role="status" className={`py-12 text-center ${dm ? "text-gray-400" : "text-gray-500"}`}>正在打开妙妙屋…</p>
+        ) : error ? (
+          <div role="alert" className="py-12 text-center">
+            <p className={dm ? "text-gray-400" : "text-gray-500"}>妙妙屋暂时无法加载，请稍后重试。</p>
+            <button onClick={refresh} className="mt-3 text-sm text-indigo-500 hover:underline">重新加载</button>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className={`py-16 text-center ${dm ? "text-gray-400" : "text-gray-500"}`}>
+            <Sparkles className="mx-auto mb-3" size={28} />
+            <p>{demos.length ? "这个分类下还没有项目" : "妙妙屋正在布置中"}</p>
+            <p className="mt-2 text-sm">有趣的作品会陆续放进来。</p>
+          </div>
+        ) : null}
 
         {/* Demo grid */}
         <AnimatePresence mode="wait">
@@ -519,7 +520,7 @@ export function Lab({ darkMode }: LabProps) {
             transition={{ duration: 0.2 }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
           >
-            {filtered.map((demo, i) => (
+            {!loading && !error && filtered.map((demo, i) => (
               <DemoCard
                 key={demo.id}
                 demo={demo}

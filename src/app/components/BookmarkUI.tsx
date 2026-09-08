@@ -23,13 +23,13 @@ export function BookmarkLayout({
     </main>
   );
 }
-export function BookmarkAdminGate({ children }: { children: ReactNode }) {
+export function BookmarkAdminGate({ children, managementPath = "/admin/bookmarks", label = "收藏" }: { children: ReactNode; managementPath?: string; label?: string }) {
   const auth = useAdminAuth();
   const location = useLocation();
   const navigate = useNavigate();
   useEffect(() => {
     // AnimatePresence keeps the exiting page mounted after navigation.
-    if (!["/collect", "/admin/bookmarks"].includes(location.pathname)) return;
+    if (!["/collect", managementPath].includes(location.pathname)) return;
     if (!auth.checking && !auth.authenticated) {
       const next = safeAdminReturnPath(
         location.pathname + location.search + location.hash,
@@ -45,6 +45,7 @@ export function BookmarkAdminGate({ children }: { children: ReactNode }) {
     location.search,
     location.hash,
     navigate,
+    managementPath,
   ]);
   if (auth.checking || !auth.authenticated)
     return <p role="status">正在确认管理员身份…</p>;
@@ -53,7 +54,7 @@ export function BookmarkAdminGate({ children }: { children: ReactNode }) {
       <div className="bookmark-empty">
         <Lock />
         <h1>无权限访问</h1>
-        <p>请使用管理员账号管理收藏。</p>
+        <p>请使用管理员账号管理{label}。</p>
         <Link to="/admin/login" className="bookmark-button">
           切换账号
         </Link>

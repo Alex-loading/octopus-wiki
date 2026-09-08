@@ -20,7 +20,7 @@ export function safeAdminReturnPath(value?: string | null): string {
   if (!value?.startsWith("/") || value.startsWith("//") || /[\\\u0000-\u0020]/.test(value)) return fallback;
   try {
     const url = new URL(value, "https://wiki.invalid");
-    const knownPage = ["/", "/blog", "/lab", "/about", "/admin/articles", "/admin/bookmarks", "/collections", "/collect", "/collect/setup"].includes(url.pathname);
+    const knownPage = ["/", "/blog", "/lab", "/about", "/admin/articles", "/admin/bookmarks", "/admin/demos", "/collections", "/collect", "/collect/setup"].includes(url.pathname);
     if (url.origin !== "https://wiki.invalid" || (!knownPage && !/^\/(post|collections)\/[^/]+$/.test(url.pathname))) return fallback;
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
@@ -67,22 +67,35 @@ export function watchAdminRole(
 ): () => void {
   let disposed = false;
   let revision = 0;
+  let verifiedUserId: string | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const refresh = async () => {
     const requestRevision = ++revision;
-    onChange({ ...READER_ROLE, checking: true });
     try {
       const role = await readRole();
-      if (!disposed && revision === requestRevision) onChange({ ...role, isAdmin: role.authenticated && role.isAdmin, checking: false });
+      if (!disposed && revision === requestRevision) {
+        verifiedUserId = role.authenticated ? role.userId : null;
+        onChange({ ...role, isAdmin: role.authenticated && role.isAdmin, checking: false });
+      }
     } catch {
-      if (!disposed && revision === requestRevision) onChange({ ...READER_ROLE, checking: false });
+      if (!disposed && revision === requestRevision) {
+        verifiedUserId = null;
+        onChange({ ...READER_ROLE, checking: false });
+      }
     }
   };
+  onChange({ ...READER_ROLE, checking: true });
   const { data: { subscription } } = auth.onAuthStateChange((_event, session) => {
     if (disposed) return;
     ++revision;
     clearTimeout(timer);
-    onChange({ ...READER_ROLE, checking: Boolean(session) });
+    // Supabase also emits SIGNED_IN on tab refocus. Recheck the same verified
+    // user in the background so admin gates do not unmount unsaved editors.
+    // A missing session or different account must lose access immediately.
+    if (!verifiedUserId || session?.user.id !== verifiedUserId) {
+      verifiedUserId = null;
+      onChange({ ...READER_ROLE, checking: Boolean(session) });
+    }
     // Defer Auth calls until the callback releases Supabase's session lock.
     if (session) timer = setTimeout(() => { void refresh(); }, 0);
   });

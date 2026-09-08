@@ -98,3 +98,58 @@ test("role subscription defers auth calls and fails closed on errors", async () 
   assert.equal(states.at(-1).isAdmin, false);
   stop();
 });
+
+test("switching accounts immediately clears the verified role and ignores the previous account's pending lookup", async () => {
+  const { watchAdminRole, READER_ROLE } = await helpers();
+  let callback!: (event: string, session: unknown) => void;
+  const pending: ((role: unknown) => void)[] = [];
+  const states: any[] = [];
+  const stop = watchAdminRole({
+    onAuthStateChange: (fn: typeof callback) => { callback = fn; return { data: { subscription: { unsubscribe() {} } } }; },
+  }, () => new Promise(done => pending.push(done)), (state: unknown) => states.push(state));
+  try {
+    const admin = { authenticated: true, isAdmin: true, userId: "admin" };
+    pending.shift()!(admin); await Promise.resolve();
+    callback("TOKEN_REFRESHED", { user: { id: "admin" } });
+    await new Promise(done => setTimeout(done, 10));
+    const oldLookup = pending.shift()!;
+    callback("SIGNED_IN", { user: { id: "reader", app_metadata: { role: "admin" } } });
+    assert.deepEqual(states.at(-1), { ...READER_ROLE, checking: true });
+    await new Promise(done => setTimeout(done, 10));
+    oldLookup(admin); await Promise.resolve();
+    assert.deepEqual(states.at(-1), { ...READER_ROLE, checking: true }, "a stale admin lookup must not authorize the new account");
+    pending.shift()!({ authenticated: true, isAdmin: false, userId: "reader" }); await Promise.resolve();
+    assert.deepEqual(states.at(-1), { authenticated: true, isAdmin: false, userId: "reader", checking: false });
+  } finally { stop(); }
+});
+
+for (const outcome of ["demoted", "error", "signed-out"]) {
+  test(`same-user background validation still revokes access when ${outcome}`, async () => {
+    const { watchAdminRole, READER_ROLE } = await helpers();
+    let callback!: (event: string, session: unknown) => void;
+    let resolve!: (role: unknown) => void;
+    let reject!: (error: Error) => void;
+    const states: any[] = [];
+    const stop = watchAdminRole({
+      onAuthStateChange: (fn: typeof callback) => { callback = fn; return { data: { subscription: { unsubscribe() {} } } }; },
+    }, () => new Promise((done, fail) => { resolve = done; reject = fail; }), (state: unknown) => states.push(state));
+    try {
+      const admin = { authenticated: true, isAdmin: true, userId: "admin" };
+      resolve(admin); await Promise.resolve();
+      callback("SIGNED_IN", { user: { id: "admin" } });
+      await new Promise(done => setTimeout(done, 10));
+      assert.deepEqual(states.at(-1), { ...admin, checking: false }, "keep the verified identity while checking the same user");
+      if (outcome === "error") reject(new Error("offline"));
+      else if (outcome === "demoted") resolve({ ...admin, isAdmin: false });
+      else {
+        callback("SIGNED_OUT", null);
+        assert.deepEqual(states.at(-1), { ...READER_ROLE, checking: false });
+        resolve(admin);
+      }
+      await Promise.resolve();
+      assert.deepEqual(states.at(-1), outcome === "demoted"
+        ? { ...admin, isAdmin: false, checking: false }
+        : { ...READER_ROLE, checking: false });
+    } finally { stop(); }
+  });
+}
