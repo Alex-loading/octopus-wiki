@@ -11,6 +11,7 @@ import {
   Zap,
 } from "lucide-react";
 import { demos, demoCategories, Demo } from "../data/demos";
+import { PROFILE } from "../data/profile";
 
 interface LabProps {
   darkMode: boolean;
@@ -556,7 +557,7 @@ export function Lab({ darkMode }: LabProps) {
             有什么有趣的想法想一起探索？
           </p>
           <a
-            href="mailto:hello@chenmo.dev"
+            href={`mailto:${PROFILE.email}`}
             className={`text-sm inline-flex items-center gap-1.5 mt-2 hover:underline ${
               dm ? "text-indigo-400" : "text-indigo-600"
             }`}
