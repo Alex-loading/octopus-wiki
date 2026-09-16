@@ -1,5 +1,6 @@
 import sharp from 'sharp';
 import { writeFile } from 'node:fs/promises';
+import { writeCatWalkAnchors } from './measure-cat-anchors.mjs';
 const root = new URL('../../', import.meta.url);
 const specs = [
   { source: 'luoxiaohei-source.png', output: 'luoxiaohei.png', rows: 7, drawnHeight: 54 },
@@ -60,3 +61,4 @@ for (const spec of specs) {
   console.log(`Prepared ${spec.output}: ${spec.rows * 4} frames`);
 }
 await writeFile(new URL('assets/pixel-room/sprites/companions.json', root), JSON.stringify({ tile: 80, baseline: 74, columns: 4, assets: specs }, null, 2) + '\n');
+await writeCatWalkAnchors();

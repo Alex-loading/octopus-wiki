@@ -159,3 +159,40 @@ test('all cat and crouching frames have transparent gutters and one shared floor
     }
   }
 });
+
+test('walking frame changes keep the drawn cat aligned with its continuous world movement', async () => {
+  const { data, info } = await sharp(readFileSync(new URL('../../public/sprites/luoxiaohei.png', import.meta.url))).raw().toBuffer({ resolveWithObject: true });
+  // Measure the delivered artwork, independently of the runtime anchor data.
+  // The upper head silhouette is stable; paws and tail deliberately move.
+  const heads = Array.from({ length: 4 }, (_, row) => Array.from({ length: 4 }, (_, col) => {
+    const opaque = (x: number, y: number) => data[((row * 80 + y) * info.width + col * 80 + x) * 4 + 3] > 127;
+    let top = 80, bottom = 0;
+    for (let y = 0; y < 80; y++) for (let x = 0; x < 80; x++) if (opaque(x, y)) { top = Math.min(top, y); bottom = Math.max(bottom, y); }
+    let left = 80, right = 0;
+    for (let y = top; y < top + Math.round((bottom - top + 1) * .4); y++) for (let x = 0; x < 80; x++) if (opaque(x, y)) { left = Math.min(left, x); right = Math.max(right, x); }
+    return (left + right) / 2;
+  }));
+  const worst = [0, 0, 0, 0], loops = new Set<number>();
+  for (const direction of [1, -1]) {
+    const root = new Group(), camera = new OrthographicCamera();
+    camera.position.set(11 * direction, 10, 14 * direction); camera.lookAt(0, 1.35, 0);
+    const cat = createCatSprite(root, new Texture(), camera);
+    const sprite = root.getObjectByName('LuoxiaoheiSprite') as Sprite;
+    let previous: { row: number; col: number; offset: number } | undefined;
+    for (let frame = 0; frame < 2400; frame++) {
+      cat.update(1 / 60, false, false);
+      const { row, frame: col } = sprite.userData;
+      if (cat.activity !== 'walk') { previous = undefined; continue; }
+      const offset = heads[row][col] - sprite.center.x * 80;
+      if (previous && previous.row === row && previous.col !== col) {
+        worst[row] = Math.max(worst[row], Math.abs(offset - previous.offset));
+        if (previous.col === 3 && col === 0) loops.add(row);
+      }
+      previous = { row, col, offset };
+    }
+    cat.hold(); cat.pet(true);
+    assert.equal(sprite.center.x, .5, 'walking offsets must not move the seated petting response');
+  }
+  assert.equal(loops.size, 4, 'exercise every direction, including the last-to-first frame transition');
+  for (let row = 0; row < 4; row++) assert.ok(worst[row] <= 1, `${['down', 'left', 'right', 'up'][row]} artwork jumps ${worst[row]} pixels independently of movement`);
+});

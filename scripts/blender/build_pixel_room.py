@@ -50,8 +50,10 @@ for name, color in {
     'earring-red':(.56,.06,.11), 'eye-white':(.95,.92,.85),
     'plush-purple':(.46,.29,.68), 'plush-light':(.66,.46,.82),
     'plush-pink':(.93,.43,.58), 'plush-ink':(.07,.055,.13),
+    'lamp-enamel':(.56,.32,.105), 'lamp-brass':(.39,.24,.10),
 }.items(): mat(name,color)
 mat('lamp', (1,.55,.18), 2.5)
+mat('lamp-bulb', (1,.67,.29), 2.5)
 mat('screen', (.19,.44,.48), .7)
 mat('screen-code', (.62,.85,.64), .65)
 mat('window', (.035,.09,.15), .3)
@@ -185,6 +187,21 @@ def lamp(name, p, power, color, size=.5):
     data=bpy.data.lights.new(name,'POINT'); data.energy=power; data.color=color; data.shadow_soft_size=size
     obj=bpy.data.objects.new(name,data); bpy.context.collection.objects.link(obj); obj.location=xyz(p)
 
+def rod(name, a, b, width, material, parent):
+    direction=Vector(xyz(tuple(y-x for x,y in zip(a,b))))
+    obj=box(name,tuple((x+y)/2 for x,y in zip(a,b)),(width,direction.length,width),material,parent)
+    obj.rotation_mode='QUATERNION'
+    obj.rotation_quaternion=direction.to_track_quat('Z','Y')
+    return obj
+
+def task_shade(name, p, parent, scale=1):
+    shade=empty(name,p,parent)
+    box('Enamel shade rim',(0,0,0),(.46*scale,.09,.36*scale),'lamp-enamel',shade)
+    box('Enamel shade shoulder',(0,.075,0),(.34*scale,.08,.27*scale),'lamp-enamel',shade)
+    box('Shade brass cap',(0,.135,0),(.20*scale,.045,.17*scale),'lamp-brass',shade)
+    box('Warm recessed diffuser',(0,-.051,0),(.37*scale,.022,.28*scale),'lamp-bulb',shade)
+    return shade
+
 def plant(x,z,y=0,scale=1,parent=None):
     box('Ceramic planter',(x,y+.25*scale,z),(.48*scale,.5*scale,.48*scale),'terracotta',parent)
     box('Pot soil',(x,y+.51*scale,z),(.39*scale,.035,.39*scale),'edge',parent)
@@ -284,10 +301,15 @@ box('Coffee coaster',(-1.7,1.35,.37),(.29,.025,.29),'sage',desk)
 box('Coffee mug',(-1.7,1.50,.37),(.20,.28,.20),'cream',desk)
 box('Coffee surface',(-1.7,1.645,.37),(.15,.012,.15),'edge',desk)
 box('Coffee mug handle',(-1.56,1.51,.37),(.10,.14,.07),'cream',desk)
-box('Desk lamp base',(1.64,1.37,-.43),(.30,.06,.30),'metal',desk)
-box('Desk lamp upright',(1.64,1.79,-.43),(.055,.84,.055),'metal',desk)
-box('Desk lamp bar',(1.4,2.19,-.43),(.54,.055,.08),'metal',desk)
-box('Desk lamp light',(1.18,2.15,-.43),(.24,.055,.18),'lamp',desk)
+desk_lamp=empty('DeskTaskLamp',parent=desk)
+box('Desk lamp weighted base',(1.70,1.38,.02),(.36,.08,.33),'lamp-brass',desk_lamp)
+rod('Desk lamp lower arm',(1.70,1.42,.02),(1.73,1.96,.06),.065,'metal',desk_lamp)
+rod('Desk lamp upper arm',(1.73,1.96,.06),(1.25,2.33,.16),.065,'metal',desk_lamp)
+box('Desk lamp hinge',(1.73,1.96,.06),(.13,.12,.12),'lamp-brass',desk_lamp)
+task_shade('Desk lamp shade',(1.23,2.18,.16),desk_lamp)
+empty('Light_DeskLamp',(1.23,2.09,.16),desk_lamp)
+empty('Aim_DeskLamp',(.15,1.34,.38),desk_lamp)
+empty('Light_Screen',(.08,2.14,-.15),desk)
 # PC tower with a side window and luminous square fans.
 box('PC case',(-1.02,.60,-2.96),(.52,1.02,.84),'metal')
 box('PC side glass',(-.742,.65,-2.96),(.018,.81,.66),'glass')
@@ -362,6 +384,14 @@ box('Framed collection print',(0,3.2,0),(.57,.50,.08),'cream',collection)
 box('Print dark inset',(0,3.2,.052),(.45,.38,.015),'book-blue',collection)
 box('Print pixel moon',(.06,3.24,.065),(.19,.19,.014),'book-gold',collection)
 
+# A small spotlight clips to the top/front rail and aims down the display face.
+collection_spot=empty('CollectionSpotFixture',parent=collection)
+box('Spotlight rail clamp',(.03,2.95,.46),(.26,.10,.22),'metal',collection_spot)
+rod('Spotlight riser',(.03,3.0,.46),(.03,3.62,.69),.07,'metal',collection_spot)
+task_shade('Collection spotlight hood',(.03,3.49,.76),collection_spot,.80)
+empty('Light_CollectionSpot',(.03,3.40,.76),collection_spot)
+empty('Aim_CollectionSpot',(.03,1.46,.40),collection_spot)
+
 # Desk, display and bed share the same back-wall alignment, in that order.
 display=shelves('WonderDisplay',(.73,0,-3.19),2.86)
 # Give the enlarged bed room along the same wall, keeping all display items.
@@ -379,6 +409,18 @@ for x in [-1.1,-.27]:
     box('Diorama tree',(x,1.70,-.05),(.045,.30,.045),'wood',display)
     box('Diorama treetop',(x,1.87,-.05),(.20,.24,.21),'leaf-light',display)
 car(display,.75,1.49,.06,'book-gold',1.0)
+# A jointed reading light stands on the second display shelf and reaches over
+# its right edge toward the bed. Anchors inherit the cabinet's horizontal scale.
+reading=empty('ShelfReadingLamp',parent=display)
+box('Reading lamp base',(1.26,1.51,.26),(.31,.08,.32),'lamp-brass',reading)
+rod('Reading lamp upright',(1.26,1.55,.26),(1.30,1.96,.35),.065,'metal',reading)
+rod('Reading lamp elbow',(1.30,1.96,.35),(1.62,2.24,.48),.065,'metal',reading)
+rod('Reading lamp reach',(1.62,2.24,.48),(2.30,2.21,.66),.065,'metal',reading)
+for p in [(1.30,1.96,.35),(1.62,2.24,.48)]:
+    box('Reading lamp brass joint',p,(.13,.13,.12),'lamp-brass',reading)
+task_shade('Bed reading shade',(2.30,2.06,.66),reading,1.12)
+empty('Light_ReadingLamp',(2.30,1.97,.66),reading)
+empty('Aim_ReadingLamp',(3.35,1.00,1.70),reading)
 # Game handheld, cartridges and stacked magazines.
 box('Retro handheld',(-.88,1.07,.07),(.47,.49,.13),'cream',display)
 box('Handheld screen',(-.88,1.16,.145),(.32,.22,.022),'screen',display)
@@ -498,9 +540,15 @@ for col in range(5):
         box('Rug dark square',(x,.102,z),(.35,.005,.35),'rug')
 for x in range(20):
     for z in [-1.2,2.8]: box('Rug fringe',(-2.02+x*.19,.078,z),(.035,.014,.10),'linen')
-lamp('Desk warm light',(-1.02,2.08,-2.98),90,(1,.63,.32))
-lamp('Display warm light',(.73,2.5,-2.61),90,(1,.61,.29))
-lamp('Collection warm light',(-3.45,2.5,1.65),90,(1,.61,.29))
+bpy.context.view_layer.update()
+for name in ['DeskLamp','ReadingLamp','CollectionSpot']:
+    anchor=bpy.data.objects['Light_'+name]
+    data=bpy.data.lights.new(name+' preview','SPOT'); data.energy=90; data.color=(1,.68,.36)
+    data.spot_size=1.75; data.spot_blend=.8; data.shadow_soft_size=.15
+    light=bpy.data.objects.new(name+' preview',data); bpy.context.collection.objects.link(light)
+    light.location=anchor.matrix_world.translation
+    target=bpy.data.objects['Aim_'+name].matrix_world.translation
+    light.rotation_euler=(target-light.location).to_track_quat('-Z','Y').to_euler()
 
 # Only the floor anchor is exported; Luo Xiaohei is drawn as a 2D sprite.
 cat=empty('Cat',(layout['cat']['spawn']['x'],.112,layout['cat']['spawn']['z']))

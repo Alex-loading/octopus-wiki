@@ -2,6 +2,7 @@ import { CircleGeometry, Mesh, MeshBasicMaterial, NearestFilter, Sprite, SRGBCol
 import { ROOM, PLAYER_CAT_CLEARANCE, distance, findPath, moveWithCollisions, type Point } from './navigation';
 import { spriteFacing, type Facing } from './person';
 import { createUprightSpriteMaterial } from './sprite';
+import walkAnchors from '../../../../assets/pixel-room/sprites/cat-walk-anchors.json';
 
 export type CatActivity = 'walk' | 'idle' | 'stretch' | 'groom' | 'happy';
 
@@ -101,6 +102,9 @@ export function createCatSprite(cat: Object3D, texture: Texture, camera: Camera)
   const right = new Vector3(), up = new Vector3(), travel = new Vector3();
   let facing: Facing = 'front', happyFlip = false;
   const show = (row: number, col: number, flip = false) => {
+    // Generated cells have different horizontal padding. Register the artwork
+    // to the idle frame without moving the controller, collision body or shadow.
+    sprite.center.x = .5 + (walkAnchors.offsetX[row]?.[col] ?? 0) / walkAnchors.tile;
     texture.repeat.x = (flip ? -1 : 1) / 4;
     texture.offset.set((col + Number(flip)) / 4, 1 - (row + 1) / 7);
     sprite.userData.frame = col; sprite.userData.row = row; sprite.userData.activity = controller.activity;
@@ -130,6 +134,6 @@ export function createCatSprite(cat: Object3D, texture: Texture, camera: Camera)
       facing = spriteFacing(travel.dot(right), travel.dot(up), facing);
       draw(reducedMotion);
     },
-    setNight(night: boolean) { material.color.set(night ? 0xe5e9f5 : 0xffffff); shadowMaterial.opacity = night ? .34 : .28; },
+    setNight(night: boolean) { material.color.set(night ? 0xc4b6a0 : 0xffffff); shadowMaterial.opacity = night ? .34 : .28; },
   };
 }

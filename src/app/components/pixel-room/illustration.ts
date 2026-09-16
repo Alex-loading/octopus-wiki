@@ -11,6 +11,7 @@ const ROOM_PALETTE: Record<string, string> = {
   linen: '#e4d9b4', blanket: '#87ad98', rug: '#4e7b74',
   'book-red': '#c37463', 'book-blue': '#588d9b', 'book-gold': '#d6ad5d',
   paper: '#efe3bb', white: '#e7e6d6', sky: '#6cabb3', 'distant-leaf': '#699b70',
+  'lamp-enamel': '#c8964f', 'lamp-brass': '#a67c48',
   'cat-black': '#26323a', 'cat-highlight': '#3e4b56',
   floor0: '#9b7852', floor1: '#a48055', floor2: '#ae895b', floor3: '#b58f60',
   floor4: '#bd9666', floor5: '#c09b6d', floor6: '#c7a575',
@@ -20,6 +21,8 @@ const ROOM_PALETTE: Record<string, string> = {
 export function createIllustratedMaterials() {
   const converted = new Map<string, THREE.MeshToonMaterial>();
   const sources = new Set<THREE.Material>();
+  const roomNight = { value: 0 };
+  const dayAppearance = new Map<THREE.MeshToonMaterial, { color: THREE.Color; emission: number }>();
   const gradient = new THREE.DataTexture(new Uint8Array([55, 115, 185, 255]), 4, 1, THREE.RedFormat);
   gradient.minFilter = gradient.magFilter = THREE.NearestFilter;
   gradient.generateMipmaps = false;
@@ -50,6 +53,8 @@ export function createIllustratedMaterials() {
       // Quantize the combined illumination, not each colored lamp independently.
       // This keeps four coherent shade families instead of smooth PBR gradients.
       material.onBeforeCompile = shader => {
+        shader.uniforms.roomNight = roomNight;
+        shader.fragmentShader = 'uniform float roomNight;\n' + shader.fragmentShader;
         if (character) {
           // The sprite-like figure uses a broad front light. Suppress the
           // lighting changes across sub-pixel voxel treads, keeping its contour.
@@ -62,16 +67,36 @@ export function createIllustratedMaterials() {
           vec3 receivedLight = (reflectedLight.directDiffuse + reflectedLight.indirectDiffuse)
             / max(diffuseColor.rgb, vec3(0.001));
           float brightness = dot(receivedLight, vec3(0.2126, 0.7152, 0.0722)) + ${character ? '0.32' : '0.0'};
-          float band = brightness < 0.52 ? 0.42 : brightness < 0.90 ? 0.64 : brightness < 1.24 ? 0.86 : 1.08;
-          vec3 shadeTint = mix(vec3(0.72, 0.84, 1.0), vec3(1.0, 0.98, 0.88), (band - 0.42) / 0.66);
+          float dayBand = brightness < 0.52 ? 0.42 : brightness < 0.90 ? 0.64 : brightness < 1.24 ? 0.86 : 1.08;
+          float nightBand = brightness < 0.10 ? 0.045 : brightness < 0.24 ? 0.10 : brightness < 0.48 ? 0.22 : brightness < 0.85 ? 0.40 : brightness < 1.35 ? 0.68 : 0.94;
+          float band = mix(dayBand, nightBand, roomNight);
+          vec3 dayTint = mix(vec3(0.72, 0.84, 1.0), vec3(1.0, 0.98, 0.88), (dayBand - 0.42) / 0.66);
+          // Keep each light's color: warm lamps and cool screen spill should
+          // remain distinct, instead of replacing all illumination with gray.
+          vec3 lightTint = clamp(receivedLight / max(brightness, 0.025), vec3(0.28), vec3(1.65));
+          vec3 nightTint = mix(vec3(0.57, 0.68, 1.0), lightTint, smoothstep(0.07, 0.50, brightness));
+          vec3 shadeTint = mix(dayTint, nightTint, roomNight);
           outgoingLight = diffuseColor.rgb * shadeTint * band + totalEmissiveRadiance;
           #include <opaque_fragment>
         `);
       };
-      material.customProgramCacheKey = () => `room-illustration-four-tones-v1:${character}`;
+      material.customProgramCacheKey = () => `room-illustration-night-light-v2:${character}`;
       converted.set(key, material);
+      dayAppearance.set(material, { color: material.color.clone(), emission: material.emissiveIntensity });
       sources.add(source);
       return material;
+    },
+    setNight(night: boolean) {
+      roomNight.value = Number(night);
+      for (const [material, day] of dayAppearance) {
+        material.color.copy(day.color);
+        material.emissiveIntensity = day.emission;
+        if (!night) continue;
+        if (material.name === 'sky') material.color.set('#172a45');
+        if (material.name === 'distant-leaf') material.color.set('#254541');
+        if (material.name === 'blue-led') material.emissiveIntensity *= .18;
+        if (material.name === 'screen' || material.name === 'screen-code') material.emissiveIntensity *= .65;
+      }
     },
     releaseSources() { for (const source of sources) source.dispose(); sources.clear(); },
     dispose() { gradient.dispose(); },

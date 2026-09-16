@@ -100,8 +100,8 @@ export function createPersonSprite(player: Object3D, texture: Texture, camera: C
       sprite.userData.action = 'pet';
     },
     setNight(night: boolean) {
-      // Shared navbar theme only. Keep the drawing readable with a subtle tint.
-      material.color.set(night ? 0xdce3f2 : 0xffffff);
+      // The unlit sprite needs its own tint to match the room's warm lamp spill.
+      material.color.set(night ? 0xc7b7a3 : 0xffffff);
       shadowMaterial.opacity = night ? .32 : .25;
     },
   };

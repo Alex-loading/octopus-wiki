@@ -6,6 +6,7 @@ import { createPersonSprite } from './person';
 import { createCatSprite, type CatActivity } from './cat';
 import { CAT_INTERACTION_RANGE, PET_DURATION, findPettingSpot } from './cat-interaction';
 import { createIllustratedMaterials, createIllustrationRenderer } from './illustration';
+import { createRoomLighting } from './lighting';
 
 export type RoomEngine = {
   dispose: () => void;
@@ -37,7 +38,7 @@ export async function createRoomEngine(options: Options): Promise<RoomEngine> {
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false, powerPreference: 'low-power' });
   renderer.setPixelRatio(1);
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.BasicShadowMap;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NoToneMapping;
   const canvas = renderer.domElement;
@@ -123,26 +124,7 @@ export async function createRoomEngine(options: Options): Promise<RoomEngine> {
   const walker = createPersonSprite(player, spriteTexture, camera, petTexture);
   const pet = createCatSprite(cat, catTexture, camera);
   player.position.set(ROOM.spawn.x, .112, ROOM.spawn.z);
-  const ambient = new THREE.HemisphereLight(0xd4e6e5, 0x647b70, 1.15);
-  scene.add(ambient);
-  const sunlight = new THREE.DirectionalLight(0xffe3b2, 2.2);
-  sunlight.position.set(-3, 8, 5);
-  sunlight.castShadow = true;
-  sunlight.shadow.mapSize.set(2048, 2048);
-  Object.assign(sunlight.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: .5, far: 25 });
-  sunlight.shadow.bias = -.0002;
-  sunlight.shadow.normalBias = .07;
-  scene.add(sunlight);
-  const lamp = new THREE.PointLight(0xffa349, 19, 6, 2);
-  lamp.position.set(-1.07, 2.2, -2.93); scene.add(lamp);
-  const libraryLight = new THREE.PointLight(0xffb768, 22, 6, 2);
-  libraryLight.position.set(.73, 2.5, -2.5); scene.add(libraryLight);
-  const collectionLight = new THREE.PointLight(0xffbb7e, 14, 5, 2);
-  collectionLight.position.set(-3.3, 2.5, 1.65); scene.add(collectionLight);
-  const windowLight = new THREE.PointLight(0x7697bc, 9, 6, 2);
-  windowLight.position.set(-4, 2.4, -2); scene.add(windowLight);
-  const backWindowLight = new THREE.PointLight(0xadd8db, 7, 6, 2);
-  backWindowLight.position.set(-2.65, 3.1, -3.4); scene.add(backWindowLight);
+  const lighting = createRoomLighting(scene, root);
   const ring = new THREE.Mesh(new THREE.RingGeometry(.20, .24, 4), new THREE.MeshBasicMaterial({ color: 0xf0c078, side: THREE.DoubleSide, transparent: true, opacity: .9 }));
   ring.rotation.x = -Math.PI / 2; ring.position.y = .13; ring.visible = false; scene.add(ring);
   const halo = new THREE.Mesh(new THREE.RingGeometry(.35, .37, 32), new THREE.MeshBasicMaterial({ color: 0xe0be85, side: THREE.DoubleSide, transparent: true, opacity: .5 }));
@@ -311,7 +293,7 @@ export async function createRoomEngine(options: Options): Promise<RoomEngine> {
     });
     materials.forEach(m => { for (const value of Object.values(m)) if (value instanceof THREE.Texture) value.dispose(); m.dispose(); });
     disposeTextures();
-    illustration.dispose(); illustratedMaterials.dispose();
+    lighting.dispose(); illustration.dispose(); illustratedMaterials.dispose();
     renderer.dispose(); canvas.remove();
   };
   if (signal.aborted) { dispose(); throw new DOMException('Aborted', 'AbortError'); }
@@ -321,10 +303,8 @@ export async function createRoomEngine(options: Options): Promise<RoomEngine> {
     setNight(value) {
       walker.setNight(value);
       pet.setNight(value);
-      ambient.intensity = value ? .8 : 1.45; sunlight.intensity = value ? 2.1 : 3.0;
-      lamp.intensity = value ? 5 : 2; libraryLight.intensity = value ? 4 : 1.5;
-      collectionLight.intensity = value ? 4 : 1.5;
-      windowLight.intensity = value ? 5 : 10; backWindowLight.intensity = value ? 4 : 9;
+      lighting.setNight(value);
+      illustratedMaterials.setNight(value);
     },
     goTo(id) { const zone = ZONES.find(z => z.id === id); if (zone) { canvas.focus({ preventScroll: true }); navigate(zone, id); } },
     reset() { cancelPetting(); position = findFreePosition(ROOM.spawn, catObstacle()) ?? position; walker.reset(); clear(); path = []; destination = null; ring.visible = false; canvas.focus({ preventScroll: true }); },

@@ -53,7 +53,9 @@ blender --background --python scripts/blender/build_pixel_room.py
 
 人物与猫的精灵沿画片高度写入直立深度，保留屏幕上的像素画面，同时避免俯视镜头下画片向后斜入桌沿。此修正仍使用正常深度测试，家具继续正确遮挡角色；不是将人物强制画在所有家具之上。
 
-灯光只读取顶栏提供的全局主题状态，场景不保存独立主题。
+灯光只读取顶栏提供的全局主题状态，场景不保存独立主题。暗色模式压低日光与窗外亮度，保留电脑屏幕的冷色反光；收藏柜顶部射灯、妙妙屋第二层伸向床面的支架灯、工作台台灯向四周发散暖光，覆盖墙面、地毯与前侧地板，搭配暖色环境反射营造全屋温馨的夜景。人物和小黑的图集同步降低亮度并染上暖色。切回浅色主题时恢复日光、窗景和原始材质颜色。
+
+灯具造型与 `Light_*` / `Aim_*` 空节点一起在 Blender 中生成，网页 `lighting.ts` 从模型读取实际世界坐标，包含收藏柜旋转和妙妙屋缩放。夜间每个灯位使用覆盖范围较大的点光源模拟漫射与反弹光，弱化后的宽角聚光灯仅补充局部阴影（512×512）；日间关闭暖色扩散补光，只启用日光阴影。材质在共享 shader uniform 中切换明暗色阶，保留不同光源的颜色，不重建模型或静态批次。
 
 首页 `/` 固定展示像素小屋；文章列表通过顶栏「文章」进入 `/blog`。旧链接中的 `view` 参数不再切换首页视图。
 使用 WASD / 方向键移动，靠近区域时按 E / Enter 浏览；点击地面让人物行走，点击区域标签自动寻路并打开内容。手机提供方向按钮。
@@ -64,6 +66,7 @@ blender --background --python scripts/blender/build_pixel_room.py
 - `../../public/sprites/frieren-pet.png`：320×160，两种侧向的蹲下与抚摸动作，共 8 帧。
 - `sprites/luoxiaohei-source.png`、`sprites/frieren-pet-source.png`：内置 imagegen 原稿；`sprites/luoxiaohei-reference.png` 为用户参考图。
 - `../../scripts/sprites/prepare-companions.mjs`：识别每行透明间隔，转透明、统一缩放并对齐脚底，避免源图不均匀排版造成切帧。运行 `node scripts/sprites/prepare-companions.mjs` 可重建。
+- `sprites/cat-walk-anchors.json`：四个方向的逐帧横向锚点，由 `../../scripts/sprites/measure-cat-anchors.mjs` 读取成品图集的上部头部轮廓生成；重建图集时自动更新，也可单独运行。原图每列留白不一致，向下与向左的一轮步态会累计约 10 像素偏移。网页按帧调整 Sprite 的横向中心，消除循环切回首帧时的跳动，世界坐标、脚底高度、碰撞、阴影与按路程推进的步频均不变；伸懒腰、舔爪与摸猫动作使用原始中心。
 - `sprites/COMPANION-PROMPTS.md`：完整提示词、生成方式与形象资料链接。
 
 资料：用户罗小黑参考图、[1905 电影网形象资料](https://www.1905.com/mdb/film/2242929/?fr=mdbypk_zp)、[罗小黑 CAT 官方微博](https://weibo.com/luoxiaohei)。罗小黑属于《罗小黑战记》，本项目按用户要求制作像素同人形象。
