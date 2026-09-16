@@ -52,7 +52,7 @@ blender --background --python scripts/blender/build_pixel_room.py
 
 灯光只读取顶栏提供的全局主题状态，场景不保存独立主题。
 
-首页 `/?view=room`；传统文章列表 `/?view=list`。点击切换按钮时会保存本机偏好。
+首页 `/` 固定展示像素小屋；文章列表通过顶栏「文章」进入 `/blog`。旧链接中的 `view` 参数不再切换首页视图。
 使用 WASD / 方向键移动，靠近区域时按 E / Enter 浏览；点击地面让人物行走，点击区域标签自动寻路并打开内容。手机提供方向按钮。
 
 ## 罗小黑与摸猫资产
