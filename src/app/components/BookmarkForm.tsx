@@ -77,13 +77,42 @@ export function BookmarkForm({
       title: suggestedTitle.current ? share.title : current.title,
     }));
   };
-  const preview = async () => {
-    if (!draft.url || previewing) return;
-    const original = draft.url;
+  const recognize = async () => {
+    if (previewing) return;
     setPreviewing(true);
     setError("");
     setNotice("");
     try {
+      let source = text;
+      let clipboardDenied = false;
+      try {
+        const clipboardText = await navigator.clipboard?.readText();
+        if (clipboardText?.trim()) source = clipboardText.slice(0, 6000);
+      } catch {
+        clipboardDenied = true;
+      }
+      const shared = parseBookmarkShare(source);
+      const original =
+        shared.urls.length === 1
+          ? shared.urls[0]
+          : source === text && shared.urls.includes(draft.url)
+            ? draft.url
+            : "";
+      setText(source);
+      setDraft((current) => ({
+        ...current,
+        url: original,
+        title: suggestedTitle.current ? shared.title : current.title,
+        cover_url: original && original !== current.url ? "" : current.cover_url,
+      }));
+      if (!original) {
+        if (shared.urls.length > 1)
+          setNotice("剪贴板中有多个链接，请先选择要收藏的链接，再次点击识别。");
+        else if (clipboardDenied)
+          setNotice("无法读取剪贴板，请允许剪贴板权限，或手动粘贴链接后重试。");
+        else setNotice("剪贴板中没有可识别的链接，请先复制文章链接。");
+        return;
+      }
       const metadata = await actions.preview(original);
       if (live.current) {
         setDraft((current) =>
@@ -167,14 +196,14 @@ export function BookmarkForm({
             aria-label="链接或分享文案"
             value={text}
             onChange={(event) => changeText(event.target.value)}
-            placeholder="粘贴 bilibili、抖音、小红书、牛客或其他网页的链接，也可以粘贴整段分享文案。"
+            placeholder="粘贴 bilibili、抖音、小红书、微信公众号、牛客或其他网页的链接，也可以粘贴整段分享文案。"
             rows={3}
             maxLength={6000}
             required
           />
         </label>
         <p className="bookmark-hint">
-          输入链接后，点击「读取标题与封面」获取网页信息。支持短链，无需先展开。
+          复制链接或分享文案后，点击「读取剪贴板并识别信息」。也可手动粘贴后识别。
         </p>
         {urls.length > 1 && (
           <label>
@@ -202,12 +231,12 @@ export function BookmarkForm({
         )}
         <button
           type="button"
-          onClick={preview}
-          disabled={!draft.url || previewing}
+          onClick={recognize}
+          disabled={previewing}
           className="bookmark-button"
         >
           <WandSparkles size={15} />
-          {previewing ? "读取中…" : "读取标题与封面"}
+          {previewing ? "识别中…" : "读取剪贴板并识别信息"}
         </button>
         {notice && (
           <p role="status" className="bookmark-hint">

@@ -3,6 +3,7 @@ export const PLATFORMS = {
   douyin: { label: "抖音", mark: "抖", color: "#506873" },
   xiaohongshu: { label: "小红书", mark: "红", color: "#D34E50" },
   nowcoder: { label: "牛客", mark: "牛", color: "#32916C" },
+  wechat: { label: "微信公众号", mark: "微", color: "#2B9A66" },
   other: { label: "其他", mark: "↗", color: "#7776A7" },
 } as const;
 export type BookmarkPlatform = keyof typeof PLATFORMS;
@@ -120,6 +121,7 @@ export function identifyPlatform(value: string): BookmarkPlatform {
   if (matches(["xiaohongshu.com", "xhslink.com", "xhslink.cn"]))
     return "xiaohongshu";
   if (matches(["nowcoder.com"])) return "nowcoder";
+  if (matches(["mp.weixin.qq.com"])) return "wechat";
   return "other";
 }
 

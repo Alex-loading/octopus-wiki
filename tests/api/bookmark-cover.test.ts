@@ -60,7 +60,7 @@ test("rejects HTML, SVG, fake images and oversized chunked responses", async () 
 });
 
 test("saving retains source links but persists a storage path for every platform", async () => {
-  for (const platform of ["xiaohongshu", "douyin", "bilibili", "nowcoder", "other"]) {
+  for (const platform of ["xiaohongshu", "douyin", "bilibili", "nowcoder", "wechat", "other"]) {
     const payload = { cover_url: `https://${platform}.example/cover`, url: "https://page.example/post", platform };
     const output = await prepareBookmarkCover(payload, null, async (url, page) => {
       assert.equal(url, payload.cover_url); assert.equal(page, payload.url); return "abc.png";

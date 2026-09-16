@@ -17,7 +17,7 @@
 ## 部署
 
 1. 沿用 `VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY` 和已有管理员账号。
-2. 在目标 Supabase 数据库依次应用 `database/migrations/007_bookmarks.sql` 和 `database/migrations/008_bookmark_capture_devices.sql`。已运行 007 的环境仅补 008。本次开发验证未连接线上数据库。
+2. 在目标 Supabase 数据库按顺序应用迁移。已有收藏环境需补 `database/migrations/011_bookmark_wechat.sql`，为平台约束加入微信公众号；全新环境执行全部迁移即可。
 3. 元信息和免登录收藏 API 沿用服务端 `SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY`，不要使用 `VITE_` 前缀。不需要平台 Cookie 或额外平台 API Key。
 4. Supabase Authentication → URL Configuration：Site URL 设置为 `https://octopus-wiki.vercel.app`，Redirect URLs 添加 `https://octopus-wiki.vercel.app/admin/login**`，保留本地 `http://localhost:3000/admin/login**`。收藏内容通过 `next` 返回，外站回跳会被拒绝。Magic Link 邮件使用 `{{ .ConfirmationURL }}`；修正配置后从线上重新发送邮件，旧邮件不会自动更新地址。
 5. 构建并部署到 Vercel，确认 `/api/collector`、`/api/bookmark-preview`、`/manifest.webmanifest`、`/collector-sw.js` 和两种 PNG 图标可访问。生产必须使用 HTTPS。`GET /api/collector` 无授权时返回 `authorized: false`；管理员启用授权可检查服务端配置和迁移是否完整。
@@ -29,9 +29,9 @@
 
 电脑：打开 `/collect/setup`，首次登录管理员账号后点击「启用 90 天免登录收藏」，再将「收藏到 Octopus」拖到书签栏。以后浏览资源时点击，核对标题、选箱并保存。已保存的书签不会随网站部署自动更新，需要重新拖入按钮或复制最新代码替换旧书签。页面限制书签脚本时，复制链接后在 `/collect` 粘贴。
 
-Android：安装 Octopus 收藏箱并完成一次设备授权后，在原 App 中「复制链接」，从桌面打开收藏箱，在输入框长按粘贴，然后点击「读取标题与封面」。仅提供链接即可请求网页元数据，也兼容整段分享文案。支持 `xhslink.cn`、`xhslink.com`、`v.douyin.com`、`b23.tv` 等短链，不需要先在浏览器展开。没有额外的「粘贴并识别」步骤，也不主动读取剪贴板。
+Android：安装 Octopus 收藏箱并完成一次设备授权后，在原 App 中「复制链接」，从桌面打开收藏箱，点击「读取剪贴板并识别信息」。它会读取整段分享文案、提取链接并请求标题与封面；剪贴板权限不可用时，先手动粘贴再点击同一按钮。支持 `mp.weixin.qq.com`、`xhslink.cn`、`xhslink.com`、`v.douyin.com`、`b23.tv` 等链接，不需要先在浏览器展开。
 
-Web Share Target 注册的是系统分享目标，无法插入 bilibili、抖音、小红书等 App 自定义的分享面板。若 App 提供「更多」或系统分享入口，可以尝试直接选择收藏箱；否则使用复制粘贴。创建桌面网页快捷方式不等于注册系统分享目标。
+Web Share Target 注册的是系统分享目标，无法插入 bilibili、抖音、小红书、微信等 App 自定义的分享面板。若 App 提供「更多」或系统分享入口，可以尝试直接选择收藏箱；否则使用复制链接后的一键识别。创建桌面网页快捷方式不等于注册系统分享目标。
 
 安装后首次授权：打开安装好的应用 → 快捷收藏设置 → 管理员登录 → 发送验证码。到邮箱复制验证码，切回应用输入，登录后点击「启用 90 天免登录收藏」。不要依赖邮件链接打开安装版应用；它可能登录到另一个浏览器窗口。页面被系统重载时，填入同一邮箱并选择「已有验证码，直接输入」。若已点击并使用邮件链接，请重新发送邮件取得新验证码。
 
@@ -39,7 +39,7 @@ iOS：网页粘贴可直接使用。`/collect/setup` 说明如何让快捷指令
 
 整段分享文案会预填链接前的文字作为标题，抖音的复制口令前缀会移除。读取网页可以补充完整标题和封面，不覆盖手动输入的标题。平台没有返回元数据时仍保留短链和文案标题，选箱后即可保存；封面选填。仅提供链接且预览未返回标题时需手填标题。封面使用原图片外链，失效时显示平台占位，不影响打开原链接。
 
-支持 Open Graph、Twitter 和抖音 `lark:url:video_title` / `lark:url:video_cover_image_url` 元数据。浏览器开发者工具中出现的标签不一定包含在服务器请求返回的 HTML 中；电脑书签按钮会直接读取当前页面 DOM。使用旧书签的用户需要从设置页重新拖入按钮才能读取新增标签，原有收藏功能仍可继续使用。
+支持 Open Graph、Twitter 和抖音 `lark:url:video_title` / `lark:url:video_cover_image_url` 元数据。微信公众号文章使用公开页面的 Open Graph 标题与封面，并沿用统一的封面转存。浏览器开发者工具中出现的标签不一定包含在服务器请求返回的 HTML 中；电脑书签按钮会直接读取当前页面 DOM。使用旧书签的用户需要从设置页重新拖入按钮才能读取新增标签，原有收藏功能仍可继续使用。
 
 移动分享的服务端预览会将小红书 CDN 的 HTTP 封面升级为 HTTPS；抖音视频初始 HTML 缺少元数据时，使用独立 Chromium 执行页面脚本后读取标题和封面。此路径使用 Node.js 24，不依赖手机或用户浏览器的登录状态。详见 [移动分享元数据修复](2026-09-07-mobile-share-metadata.md)。
 

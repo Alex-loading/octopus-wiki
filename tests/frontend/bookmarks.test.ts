@@ -30,6 +30,7 @@ test("extracts mobile sharing text, deduplicates links, and classifies real doma
     ["https://b23.tv/x", "bilibili"],
     ["https://v.douyin.com/x", "douyin"],
     ["https://xhslink.com/x", "xiaohongshu"],
+    ["https://mp.weixin.qq.com/s/zk0KxuLzhmMJ4LPYW_OHMA", "wechat"],
     ["https://www.nowcoder.com/discuss/x", "nowcoder"],
     ["https://bilibili.com.evil.example/x", "other"],
   ])

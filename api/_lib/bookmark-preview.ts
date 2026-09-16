@@ -22,6 +22,7 @@ const PREVIEW_HOSTS = new Set([
   "www.nowcoder.com",
   "m.nowcoder.com",
   "ac.nowcoder.com",
+  "mp.weixin.qq.com",
 ]);
 export function allowedPreviewUrl(value: string): URL {
   const url = parseBookmarkUrl(value);
@@ -57,6 +58,29 @@ export async function readBoundedText(
       text += decoder.decode(value, { stream: true });
     }
     return text + decoder.decode();
+  } finally {
+    await reader.cancel().catch(() => {});
+  }
+}
+async function readHtmlHead(response: Response, maxBytes: number): Promise<string> {
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+  const decoder = new TextDecoder();
+  let size = 0,
+    text = "";
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) return text + decoder.decode();
+      const remaining = maxBytes - size;
+      const inspected = value.subarray(0, Math.max(0, remaining));
+      size += inspected.byteLength;
+      text += decoder.decode(inspected, { stream: true });
+      const end = /<\/head\s*>/i.exec(text);
+      if (end) return text.slice(0, end.index + end[0].length);
+      if (inspected.byteLength < value.byteLength || size >= maxBytes)
+        throw new Error("响应内容过大。");
+    }
   } finally {
     await reader.cancel().catch(() => {});
   }
@@ -156,7 +180,8 @@ export async function fetchBookmarkPreview(
         Accept: "text/html",
         // XHS serves only the platform logo to non-browser preview agents,
         // while its public desktop HTML contains the note's signed images.
-        "User-Agent": url.hostname === "xiaohongshu.com" || url.hostname.endsWith(".xiaohongshu.com")
+        "User-Agent": url.hostname === "mp.weixin.qq.com" ||
+          url.hostname === "xiaohongshu.com" || url.hostname.endsWith(".xiaohongshu.com")
           ? "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
           : "OctopusWiki-LinkPreview/1.0",
       },
@@ -177,7 +202,7 @@ export async function fetchBookmarkPreview(
       throw new Error("平台暂时无法读取，可以手动填写标题和封面后保存。");
     }
     const preview = parsePreviewHtml(
-      await readBoundedText(response, 512 * 1024),
+      await readHtmlHead(response, 512 * 1024),
       url.href,
     );
     if ((!preview.title || !preview.cover_url) && douyinVideoPage(url.href)) {

@@ -45,14 +45,16 @@
 
   Public bookmarks live at `/collections`; administrators use `/collect` to save links and
   `/admin/bookmarks` to manage resources and collection boxes. Apply
-  `database/migrations/007_bookmarks.sql` and `008_bookmark_capture_devices.sql` before using these pages. Both the collection and its
+  `database/migrations/007_bookmarks.sql`, `008_bookmark_capture_devices.sql`, and
+  `011_bookmark_wechat.sql` before using these pages. Both the collection and its
   resource must be public to appear on the public site. Duplicate links are rejected and
   nonempty collections cannot be deleted.
 
   `/collect/setup` provides a desktop bookmarklet, Android PWA installation/share instructions,
   and an iOS Shortcuts integration recipe. On Android, copy the whole sharing text from the original
-  app, open the installed collector, paste into the input, and choose “读取标题与封面”. A link alone
-  is enough to request metadata. App-specific share
+  app, open the installed collector, and choose “读取剪贴板并识别信息”. If clipboard permission is
+  unavailable, paste into the input first and use the same action. A link alone is enough to request
+  metadata. WeChat official account articles on `mp.weixin.qq.com` are supported. App-specific share
   panels cannot be extended through Web Share Target. Sharing text prefills a title, and short links
   remain saveable when metadata is unavailable; covers are optional. The metadata preview
   API reuses the server-only Supabase variables; unsupported or blocked previews can be filled

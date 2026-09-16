@@ -90,8 +90,8 @@ export function CollectorSetup({ darkMode }: { darkMode: boolean }) {
             <li>
               打开安装好的应用，在快捷收藏设置中登录管理员邮箱。去邮箱复制验证码，切回本应用输入，验证后点击「启用 90 天免登录收藏」。
             </li>
-            <li>在 bilibili、抖音、小红书等 App 的分享面板中选择「复制链接」。整段文案可以直接复制，不用自己删掉文字或展开短链。</li>
-            <li>从桌面打开「Octopus 收藏箱」，在输入框长按粘贴链接，点击「读取标题与封面」。</li>
+            <li>在 bilibili、抖音、小红书、微信公众号等 App 的分享面板中选择「复制链接」。整段文案可以直接复制，不用自己删掉文字或展开短链。</li>
+            <li>从桌面打开「Octopus 收藏箱」，点击「读取剪贴板并识别信息」。若浏览器未授权剪贴板，可先手动粘贴再点击识别。</li>
             <li>核对标题和封面，选择或新建收藏箱，点击保存。封面选填，读取失败也可以手动填写后保存。</li>
           </ol>
           <p>
@@ -125,7 +125,7 @@ export function CollectorSetup({ darkMode }: { darkMode: boolean }) {
           <h2>随时可用 · 粘贴收藏</h2>
           <p>
             支持原链接，也支持
-            bilibili、抖音、小红书、牛客等平台的整段分享文案。封面和标题读取失败时，可手动填写。
+            bilibili、抖音、小红书、微信公众号、牛客等平台的整段分享文案。封面和标题读取失败时，可手动填写。
           </p>
           <div className="bookmark-form-actions">
             <Link to="/collect" className="bookmark-button primary">

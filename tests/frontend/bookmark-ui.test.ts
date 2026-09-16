@@ -224,6 +224,55 @@ async function click(text: string) {
   await act(async () => button.click());
 }
 
+test("clipboard recognition fills a WeChat article and immediately previews metadata", async (t) => {
+  const clipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: {
+      readText: async () =>
+        "推荐阅读 https://mp.weixin.qq.com/s/zk0KxuLzhmMJ4LPYW_OHMA",
+    },
+  });
+  t.after(() => {
+    if (clipboard) Object.defineProperty(navigator, "clipboard", clipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
+  });
+  const calls: string[] = [];
+  await mount(
+    React.createElement(Form, {
+      collections: [box],
+      onCollectionCreated() {},
+      onSaved() {},
+      actions: {
+        save: async () => assert.fail("save should not run"),
+        createCollection: async () => assert.fail("create should not run"),
+        preview: async (url: string) => {
+          calls.push(url);
+          return {
+            title: "我不得不把才华埋葬在昨天",
+            cover_url: "https://mmbiz.qpic.cn/article-cover.jpg",
+          };
+        },
+      },
+    }),
+  );
+  await click("读取剪贴板并识别信息");
+  assert.deepEqual(calls, ["https://mp.weixin.qq.com/s/zk0KxuLzhmMJ4LPYW_OHMA"]);
+  assert.equal(
+    (host.querySelector('[aria-label="链接或分享文案"]') as HTMLTextAreaElement).value,
+    "推荐阅读 https://mp.weixin.qq.com/s/zk0KxuLzhmMJ4LPYW_OHMA",
+  );
+  assert.equal(
+    (host.querySelector('[aria-label="标题"]') as HTMLInputElement).value,
+    "我不得不把才华埋葬在昨天",
+  );
+  assert.equal(
+    (host.querySelector('[aria-label="封面链接"]') as HTMLInputElement).value,
+    "https://mmbiz.qpic.cn/article-cover.jpg",
+  );
+  assert.match(host.querySelector(".bookmark-parsed")!.textContent!, /微信公众号/);
+});
+
 test("capture creates and selects a collection without losing a draft, then saves real fields", async () => {
   stubDatabase();
   let saved: any;
@@ -307,7 +356,7 @@ test("Android pasted sharing text remains saveable when Douyin metadata is unava
   await change("链接或分享文案", text);
   assert.equal((host.querySelector('[aria-label="链接或分享文案"]') as HTMLTextAreaElement).value, text);
   assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "这哥们儿真男人！# 万岁山武侠城 # 万岁山老嫂子...");
-  await click("读取标题与封面");
+  await click("读取剪贴板并识别信息");
   assert.match(host.textContent!, /可以手动填写后保存/);
   await change("收藏箱", boxId);
   await act(async () => Simulate.submit(host.querySelector("form")!));
@@ -339,7 +388,7 @@ test("a bare video link previews the title and signed cover without sharing text
   await mount(React.createElement(Form, { collections: [box], onCollectionCreated() {}, onSaved() {} }));
   await change("链接或分享文案", url);
   assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "");
-  await click("读取标题与封面");
+  await click("读取剪贴板并识别信息");
   assert.equal(preview.mock.callCount(), 1);
   assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, title);
   assert.equal((host.querySelector('[aria-label="封面链接"]') as HTMLInputElement).value, cover);
@@ -352,10 +401,10 @@ test("preview replaces an app-provided sharing title until the user edits it", a
     collections: [box], onCollectionCreated() {}, onSaved() {},
     initial: { url: "https://v.douyin.com/728lgXkTLvg/", title: "抖音", cover_url: "", collection_id: "", note: "", is_public: true },
   }));
-  await click("读取标题与封面");
+  await click("读取剪贴板并识别信息");
   assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "这哥们儿真男人！#万岁山武侠城 - 抖音");
   await change("标题", "我写的标题");
-  await click("读取标题与封面");
+  await click("读取剪贴板并识别信息");
   assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "我写的标题");
 });
 test("auto-filled share titles follow changed links, but successful preview respects manually edited titles", async () => {
@@ -366,11 +415,11 @@ test("auto-filled share titles follow changed links, but successful preview resp
   await change("链接或分享文案", "第一条 https://xhslink.cn/o/first");
   await change("链接或分享文案", "第二条 https://xhslink.cn/o/second");
   assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "第二条");
-  await click("读取标题与封面");
+  await click("读取剪贴板并识别信息");
   assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "网页完整标题");
   assert.match(host.textContent!, /封面选填/);
   await change("标题", "手动标题");
-  await click("读取标题与封面");
+  await click("读取剪贴板并识别信息");
   assert.equal((host.querySelector('[aria-label="标题"]') as HTMLInputElement).value, "手动标题");
 });
 test("unauthorized sharing offers one-time login with encoded input and performs no private query", async () => {
@@ -587,7 +636,7 @@ test("late preview never overwrites manually edited title", async () => {
       onSaved() {},
     }),
   );
-  await click("读取标题与封面");
+  await click("读取剪贴板并识别信息");
   await change("标题", "手动标题");
   await act(async () =>
     resolve(

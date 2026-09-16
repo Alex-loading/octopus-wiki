@@ -10,7 +10,7 @@
 
 ## 收藏箱迁移
 
-收藏功能新增 `database/migrations/007_bookmarks.sql`，创建独立的 `bookmark_collections` 和 `bookmarks` 表；`008_bookmark_capture_devices.sql` 创建仅服务端可访问的设备授权表。不修改文章数据。已运行 007 的环境仅补 008。
+收藏功能新增 `database/migrations/007_bookmarks.sql`，创建独立的 `bookmark_collections` 和 `bookmarks` 表；`008_bookmark_capture_devices.sql` 创建仅服务端可访问的设备授权表；`011_bookmark_wechat.sql` 为已有环境加入微信公众号平台约束。不修改文章数据。
 
 在测试库以 owner 身份执行 `scripts/db/verify-bookmarks.sql` 验证游客、普通账号、伪造用户元数据、两类管理员声明、去重约束、移动资源和禁止删除非空收藏箱。测试使用独立事务，最后回滚。应用端也兼容 PostgreSQL 对删除限制返回的 `23503` 与 `23001` 错误码。
 

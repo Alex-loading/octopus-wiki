@@ -190,3 +190,42 @@ test("XHS desktop metadata remains recoverable and its platform logo is never a 
   });
   assert.equal(preview.cover_url, "https://sns-webpic-qc.xhscdn.com/fresh/cover.jpg");
 });
+
+test("WeChat official account articles use desktop metadata for title and cover", async () => {
+  const page = "https://mp.weixin.qq.com/s/zk0KxuLzhmMJ4LPYW_OHMA";
+  const preview = await fetchBookmarkPreview(page, async (_url, options) => {
+    assert.match(new Headers(options?.headers).get("User-Agent") ?? "", /Mozilla\/5\.0/);
+    return new Response(
+      '<meta property="og:title" content="我不得不把才华埋葬在昨天">' +
+        '<meta property="og:image" content="https://mmbiz.qpic.cn/mmbiz_jpg/example/0?wx_fmt=jpeg">',
+      { headers: { "Content-Type": "text/html; charset=UTF-8" } },
+    );
+  });
+  assert.deepEqual(preview, {
+    title: "我不得不把才华埋葬在昨天",
+    cover_url: "https://mmbiz.qpic.cn/mmbiz_jpg/example/0?wx_fmt=jpeg",
+  });
+  assert.throws(() => allowedPreviewUrl("https://mp.weixin.qq.com.evil.example/s/test"));
+});
+
+test("WeChat preview stops after metadata instead of rejecting a large article body", async () => {
+  const page = "https://mp.weixin.qq.com/s/large-article";
+  const html =
+    '<head><meta property="og:title" content="长文章">' +
+    '<meta property="og:image" content="https://mmbiz.qpic.cn/cover.jpg"></head>' +
+    "x".repeat(600 * 1024);
+  const preview = await fetchBookmarkPreview(
+    page,
+    async () =>
+      new Response(html, {
+        headers: {
+          "Content-Type": "text/html; charset=UTF-8",
+          "Content-Length": String(Buffer.byteLength(html)),
+        },
+      }),
+  );
+  assert.deepEqual(preview, {
+    title: "长文章",
+    cover_url: "https://mmbiz.qpic.cn/cover.jpg",
+  });
+});

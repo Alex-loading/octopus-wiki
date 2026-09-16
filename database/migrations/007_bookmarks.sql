@@ -21,7 +21,7 @@ create table if not exists public.bookmarks (
   title text not null check (length(btrim(title)) between 1 and 300),
   cover_url text not null default '' check (length(cover_url) <= 4096 and (cover_url = '' or cover_url ~* '^https?://[^/@[:space:]]+([/?#]|$)')),
   note text not null default '' check (length(note) <= 2000),
-  platform text not null default 'other' check (platform in ('bilibili', 'douyin', 'xiaohongshu', 'nowcoder', 'other')),
+  platform text not null default 'other' check (platform in ('bilibili', 'douyin', 'xiaohongshu', 'nowcoder', 'wechat', 'other')),
   is_public boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
