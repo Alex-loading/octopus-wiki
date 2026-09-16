@@ -25,7 +25,9 @@ node scripts/sprites/prepare-frieren.mjs
 
 - `octopus-room.blend`：房间、灯光与正交相机；Player 和 Cat 均为空的位置标记。
 - `layout.json`：网页碰撞矩形、出生点、区域坐标；采用 Three.js Y 向上坐标。
-- `../../public/models/octopus-room.glb`：约 0.51 MB 的网页房间模型，不包含原 3D 人物。
+- `../../public/models/octopus-room.glb`：网页房间模型，内嵌四张像素海报贴图，不包含原 3D 人物。
+- `posters/`：用户海报原图、imagegen 像素重绘原稿（`*-pixel-source.png`）和 48×48 / 16 色游戏贴图（`*-pixel.png`）；贴图在 Blender 中打包保存，并随 GLB 导出，无需运行时单独请求图片。
+- `../../scripts/sprites/prepare-posters.mjs`：统一像素海报网格与有限色板；最近邻缩放、不使用抖色，Blender 材质也使用最近邻采样。生成方式和提示词见 `posters/PROMPTS.md`。
 - `../../scripts/blender/build_pixel_room.py`：确定性生成脚本（Blender 4.5 LTS）。
 - `../../scripts/blender/pack_glb_normals.py`：导出后使用 glTF 标准量化格式存储法线，顶点位置和位置标记数据保持原值。
 
@@ -43,6 +45,7 @@ blender --background --python scripts/blender/build_pixel_room.py
 - 左侧收藏柜朝向房间，陈列机甲、模型车、复古相机、唱片、书籍和收纳篮。
 - 工作台、妙妙屋展柜、床从左到右沿后墙排成一条直线。展柜进入妙妙屋；陈列飞船、机甲、微缩房屋景观、掌机和杂志，配透明柜门与暖灯。
 - 床头靠后墙，床面加宽 20%、加长 25%，保留绿色条纹被套和铁锈色盖毯；旁边展柜稍作收窄，为加大的床留出空间。书桌前不放椅子，桌前通道和中央地毯区域均可行走。
+- 床头墙面有四张大小略有差异、上下错落并轻微倾斜的海报：万能青年旅店、三棱镜、眼睛和粉色人物；按原图重绘为粗颗粒像素画，配薄纸边与小胶带。被子右侧放置紫色体素章鱼玩偶，头部体素为 0.06 单位，触手为 0.05 单位，带八只短触手、刺绣眼睛、笑脸和腮红；面朝正交相机，静态摆件不影响角色和猫的导航。
 
 `cat.ts` 使用 2D 罗小黑图集，四方向闲逛、伸懒腰、舔爪和被摸时眯眼。人物和猫保持 0.74 单位的脚底间距；键盘移动、点击寻路、路径平滑、摸猫接近与重置位置均检查动态碰撞。小黑被挡住会停在原地，随机伸懒腰、舔爪或休息，持续受阻时切换动作，空间恢复后继续巡游。
 

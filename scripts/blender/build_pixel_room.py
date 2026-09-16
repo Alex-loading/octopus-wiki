@@ -48,6 +48,8 @@ for name, color in {
     'boot-highlight':(.43,.25,.125), 'eye-green':(.095,.245,.16),
     'eye-green-light':(.26,.46,.25), 'eyelash':(.025,.04,.032),
     'earring-red':(.56,.06,.11), 'eye-white':(.95,.92,.85),
+    'plush-purple':(.46,.29,.68), 'plush-light':(.66,.46,.82),
+    'plush-pink':(.93,.43,.58), 'plush-ink':(.07,.055,.13),
 }.items(): mat(name,color)
 mat('lamp', (1,.55,.18), 2.5)
 mat('screen', (.19,.44,.48), .7)
@@ -411,6 +413,37 @@ for x,y in [(3.61,3.48),(4.12,3.67)]:
     box('Art card block',((x-2.98)*.85+.73,y-.02,-3.714),(.23,.24,.014),'book-red' if x<4 else 'sage')
     box('Card pin',((x-2.98)*.85+.73,y+.2,-3.695),(.03,.03,.025),'book-gold')
 
+# Pixel-art redraws of the user's prints, staggered above the bed. Image planes
+# face into the room (+Z); explicit UVs keep each square upright and uncropped.
+def poster(name, filename, x, y, size, tilt):
+    group=empty(name,(x,y,-3.825))
+    group.rotation_euler[1]=math.radians(tilt)
+    box('Poster paper backing',(0,0,0),(size+.035,size+.035,.018),'paper',group)
+    material=mat('poster-'+filename,(1,1,1))
+    image=bpy.data.images.load(str(ROOT/'assets/pixel-room/posters'/filename))
+    image.pack()
+    image.filepath='//posters/'+filename
+    texture=material.node_tree.nodes.new('ShaderNodeTexImage')
+    texture.image=image
+    texture.interpolation='Closest'
+    material.node_tree.links.new(texture.outputs['Color'],material.node_tree.nodes.get('Principled BSDF').inputs['Base Color'])
+    half=size/2
+    mesh=bpy.data.meshes.new(name+' artwork')
+    mesh.from_pydata([xyz(p) for p in [(-half,-half,.011),(half,-half,.011),(half,half,.011),(-half,half,.011)]],[],[(0,1,2,3)])
+    mesh.uv_layers.new(name='Poster UV')
+    for loop,uv in zip(mesh.uv_layers.active.data,[(0,0),(1,0),(1,1),(0,1)]): loop.uv=uv
+    mesh.materials.append(material)
+    artwork=bpy.data.objects.new(name+' artwork',mesh)
+    bpy.context.collection.objects.link(artwork); artwork.parent=group
+    for tape_x in [-size*.32,size*.32]:
+        box('Poster masking tape',(tape_x,half,.024),(.16,.065,.012),'cream',group)
+    return group
+
+poster('PosterYouth','omnipotent-youth-pixel.png',2.70,3.49,.94,-3)
+poster('PosterPrism','prism-pixel.png',4.02,3.36,1.08,2)
+poster('PosterEye','eye-pixel.png',2.84,2.34,1.00,2)
+poster('PosterPortrait','portrait-pixel.png',4.11,2.17,.92,-4)
+
 # Back-wall bed: two pillows, a ribbed blue-green duvet and a rust throw.
 bed=empty('Bed',(3.403,0,-1.6325))
 # Blender axes are X width / Y depth / Z height: 20% wider, 25% longer.
@@ -428,6 +461,33 @@ box('Rust throw',(0,1.01,-.61),(2.24,.09,.66),'terracotta',bed)
 for i in range(13): box('Throw knit',(-1.03+i*.17,1.064,-.61),(.075,.025,.65),'book-red',bed)
 for x in [-.8,.8]:
     for z in [-1.23,1.23]: box('Bed short foot',(x,.17,z),(.14,.25,.14),'metal',bed)
+
+# A small stuffed octopus rests on the duvet, separate from the moving characters.
+# Chunky voxel steps shape the head and eight short, splayed plush tentacles.
+plush=empty('OctopusPlush',(4.08,1.005,-1.43))
+# Match the orthographic camera's horizontal viewing direction (11, 10, 14).
+plush.rotation_euler[2]=math.atan2(11,14)
+voxel_volume('Plush round head',(0,0,0),[
+    (.09,.34,.31),(.15,.47,.42),(.28,.52,.46),
+    (.39,.46,.41),(.48,.30,.27),(.51,.13,.12),
+],'plush-purple',plush,cell=.06,elliptical=True)
+for index in range(8):
+    angle=index*math.tau/8
+    tentacle=empty('Plush tentacle '+str(index+1),
+                   (.26*math.sin(angle),0,.26*math.cos(angle)),plush)
+    tentacle.rotation_euler[2]=angle
+    voxel_volume('Plush soft tentacle',(0,0,0),[
+        (0,.12,.23),(.035,.19,.29),(.09,.18,.26),(.145,.12,.18),
+    ],'plush-purple',tentacle,cell=.05,elliptical=True)
+    box('Plush pale underside',(0,.025,.055),(.10,.03,.14),'plush-light',tentacle)
+for x in [-.105,.105]:
+    eye=box('Plush embroidered eye',(x,.285,.238),(.060,.080,.025),'plush-ink',plush)
+    eye['faceDetail']=True
+    box('Plush eye sparkle',(x-.014,.305,.255),(.025,.025,.012),'white',plush)['faceDetail']=True
+    box('Plush rosy cheek',(x*1.55,.237,.236),(.075,.035,.022),'plush-pink',plush)['faceDetail']=True
+for x,y in [(-.028,.231),(0,.216),(.028,.231)]:
+    box('Plush stitched smile',(x,y,.250),(.030,.025,.017),'plush-ink',plush)['faceDetail']=True
+
 # Geometric woven rug, in the clear central circulation area.
 box('Room geometric rug',(-.23,.075,.80),(3.86,.025,3.90),'rug')
 for col in range(5):

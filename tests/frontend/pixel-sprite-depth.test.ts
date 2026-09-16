@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { OrthographicCamera, Raycaster, Vector2, Vector3, ShaderLib } from 'three';
+import { OrthographicCamera, Raycaster, Vector2, Vector3, ShaderLib, Texture } from 'three';
 import { createUprightSpriteMaterial, uprightDepthSlope } from '../../src/app/components/pixel-room/sprite.ts';
 
 test('standing pixels keep their screen position but use upright world depth near the real desk', async () => {
@@ -15,7 +15,10 @@ test('standing pixels keep their screen position but use upright world depth nea
   material.onBeforeCompile(shader as never, {} as never);
   assert.match(shader.vertexShader, /mvPosition\.z \+= rotatedPosition\.y \* uprightDepthSlope/);
   const file = readFileSync(new URL('../../public/models/octopus-room.glb', import.meta.url));
-  const { scene } = await new GLTFLoader().parseAsync(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength), '');
+  // This regression raycasts the real geometry. Embedded poster images do not
+  // affect depth, so use texture placeholders without requiring a browser DOM.
+  const loader = new GLTFLoader().register(() => ({ name: 'geometry-test-textures', loadTexture: async () => new Texture() }));
+  const { scene } = await loader.parseAsync(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength), '');
   scene.updateMatrixWorld(true);
   const desk = scene.getObjectByName('Desk')!;
   const { data } = await sharp(readFileSync(new URL('../../public/sprites/frieren.png', import.meta.url))).raw().toBuffer({ resolveWithObject: true });
