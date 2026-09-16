@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useDemos } from "../content/useDemos";
 import { motion, AnimatePresence } from "motion/react";
@@ -354,6 +355,11 @@ export function Lab({ darkMode }: LabProps) {
   const demoCategories = useMemo(() => ["全部", ...new Set(demos.map(demo => demo.category).filter(category => category !== "全部"))], [demos]);
   const [selectedCategory, setSelectedCategory] = useState("全部");
   const [selectedDemo, setSelectedDemo] = useState<Demo | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedDemo = searchParams.get("demo");
+  useEffect(() => {
+    if (requestedDemo) setSelectedDemo(demos.find(demo => demo.slug === requestedDemo) ?? null);
+  }, [requestedDemo, demos]);
 
   const filtered = useMemo(() => {
     if (selectedCategory === "全部") return demos;
@@ -575,7 +581,10 @@ export function Lab({ darkMode }: LabProps) {
           <DemoModal
             demo={selectedDemo}
             dm={dm}
-            onClose={() => setSelectedDemo(null)}
+            onClose={() => {
+              setSelectedDemo(null);
+              if (requestedDemo) setSearchParams(params => { params.delete("demo"); return params; }, { replace: true });
+            }}
           />
         )}
       </AnimatePresence>

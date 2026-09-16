@@ -170,6 +170,7 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={toggleDarkMode}
+              aria-label={darkMode ? "切换为浅色主题" : "切换为深色主题"}
               className={`p-2 rounded-lg transition-colors ${darkMode ? "hover:bg-white/10 text-gray-300" : "hover:bg-gray-100 text-gray-600"
                 }`}
             >

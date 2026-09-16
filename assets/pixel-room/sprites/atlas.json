@@ -1,0 +1,19 @@
+{
+  "image": "/sprites/frieren.png",
+  "columns": 4,
+  "rows": [
+    "front",
+    "left",
+    "right",
+    "back"
+  ],
+  "tileSize": 80,
+  "baseline": 74,
+  "drawnHeight": 64,
+  "columnsMeaning": [
+    "idle",
+    "step-a",
+    "passing",
+    "step-b"
+  ]
+}

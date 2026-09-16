@@ -1,0 +1,19 @@
+{
+  "tile": 80,
+  "baseline": 74,
+  "columns": 4,
+  "assets": [
+    {
+      "source": "luoxiaohei-source.png",
+      "output": "luoxiaohei.png",
+      "rows": 7,
+      "drawnHeight": 54
+    },
+    {
+      "source": "frieren-pet-source.png",
+      "output": "frieren-pet.png",
+      "rows": 2,
+      "drawnHeight": 56
+    }
+  ]
+}
