@@ -1,6 +1,6 @@
 # 跨平台收藏箱使用与部署
 
-保存原链接、标题、可选封面链接和备注；Android 优先，iOS 可通过粘贴或手工配置快捷指令接入。不备份原文、图片文件或视频，不同步平台原生收藏。
+保存原链接、标题、可选封面和备注；Android 优先，iOS 可通过粘贴或手工配置快捷指令接入。2026-09-16 起封面图片统一转存 Supabase Storage，保留原始链接；不备份原文或视频，不同步平台原生收藏。
 
 ## 页面与规则
 
@@ -23,7 +23,7 @@
 5. 构建并部署到 Vercel，确认 `/api/collector`、`/api/bookmark-preview`、`/manifest.webmanifest`、`/collector-sw.js` 和两种 PNG 图标可访问。生产必须使用 HTTPS。`GET /api/collector` 无授权时返回 `authorized: false`；管理员启用授权可检查服务端配置和迁移是否完整。
 6. Supabase Authentication → Emails → Magic link or OTP：将 `supabase/templates/magic-link.html` 复制到 Body，同时保留 `{{ .Token }}` 验证码与 `{{ .ConfirmationURL }}` 链接。此模板需要单独保存到 Supabase，推送源码不会自动同步。
 
-`npm run dev` 只运行前端。真实收藏授权和元信息 API 联调使用 `npx vercel dev`。开发模式不注册 service worker，生产构建（含 `vite preview`）才会注册。
+`npm run dev` 现在同时运行前端和真实 API，配置 `.env.local` 后即可联调收藏授权、封面转存与飞书图片。开发模式不注册 service worker；`vite preview` 仍仅提供构建后的前端，不能执行 API。
 
 ## 使用
 

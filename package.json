@@ -12,6 +12,7 @@
     "typecheck:api": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
     "test:api": "tsx --test tests/api/*.test.ts",
+    "covers:backfill": "tsx scripts/bookmarks/archive-covers.ts",
     "db:init": "bash ./scripts/db/init-db.sh",
     "db:verify": "bash ./scripts/db/init-db.sh && bash ./scripts/db/init-db.sh",
     "db:verify-admin": "bash ./scripts/db/verify-admin.sh"

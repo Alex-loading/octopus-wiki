@@ -179,3 +179,14 @@ test("preview authenticates before any fetch, keeps replies private and graceful
   assert.equal((await result.json()).message, "请手动填写");
   assert.equal(calls, 1);
 });
+test("XHS desktop metadata remains recoverable and its platform logo is never a cover", async () => {
+  const logo = '<title>小红书</title><meta property="og:image" content="https://picasso-static.xiaohongshu.com/fe-platform/logo.png">';
+  const page = "https://www.xiaohongshu.com/explore/note?xsec_token=original";
+  assert.equal(parsePreviewHtml(logo, page).cover_url, "");
+  const preview = await fetchBookmarkPreview(page, async (_url, options) => {
+    const desktop = new Headers(options?.headers).get("User-Agent")?.includes("Mozilla/5.0");
+    return new Response(desktop ? logo + '<meta property="og:image" content="https://sns-webpic-qc.xhscdn.com/fresh/cover.jpg">' : logo,
+      { headers: { "Content-Type": "text/html" } });
+  });
+  assert.equal(preview.cover_url, "https://sns-webpic-qc.xhscdn.com/fresh/cover.jpg");
+});

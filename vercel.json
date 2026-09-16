@@ -1,8 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
+    "api/bookmarks.ts": {
+      "maxDuration": 90,
+      "includeFiles": "node_modules/@sparticuz/chromium/bin/**"
+    },
     "api/collector.ts": {
-      "maxDuration": 60,
+      "maxDuration": 90,
       "includeFiles": "node_modules/@sparticuz/chromium/bin/**"
     },
     "api/bookmark-preview.ts": {

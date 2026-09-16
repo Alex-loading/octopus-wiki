@@ -22,6 +22,7 @@ export type Bookmark = {
   canonical_url: string;
   title: string;
   cover_url: string;
+  cover_storage_path?: string;
   note: string;
   platform: BookmarkPlatform;
   is_public: boolean;

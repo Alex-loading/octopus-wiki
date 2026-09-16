@@ -5,9 +5,12 @@
 
   ## Running the code
 
-  Run `npm i` to install the dependencies.
+  Use Node.js 24 (`nvm use`), then run `npm i` to install the dependencies.
 
-  Run `npm run dev` to start the development server.
+  Run `npm run dev` to start the development server (normally `http://localhost:5173`).
+  It runs Vite and the existing `/api/*` Web Request/Response handlers on the same origin.
+  Server credentials load from `.env.local` and stay on the server. No separate Vercel CLI
+  process or production API proxy is needed. Direct `/api/*.ts` source requests return 404.
 
   ## Admin Article Console
 
@@ -25,7 +28,7 @@
   - `npm run db:init`
   - `npm run db:verify`
 
-  In Supabase **Authentication → URL Configuration**, set **Site URL** to `https://octopus-wiki.vercel.app`. Add `https://octopus-wiki.vercel.app/admin/login**` to **Redirect URLs** and retain `http://localhost:3000/admin/login**` for local Vercel development (use your real Vite port when testing Vite alone). The suffix covers the `next` query parameter. The login page sets `emailRedirectTo` to the current origin's `/admin/login?next=...`; Supabase falls back to Site URL if that address is not allowed. See [Supabase redirect configuration](https://supabase.com/docs/guides/auth/redirect-urls).
+  In Supabase **Authentication → URL Configuration**, set **Site URL** to `https://octopus-wiki.vercel.app`. Add `https://octopus-wiki.vercel.app/admin/login**` to **Redirect URLs**, plus `http://localhost:5173/admin/login**` and `http://127.0.0.1:5173/admin/login**` for local development (adjust the port to your actual server). The suffix covers the `next` query parameter. The login page sets `emailRedirectTo` to the current origin's `/admin/login?next=...`; Supabase falls back to Site URL if that address is not allowed. See [Supabase redirect configuration](https://supabase.com/docs/guides/auth/redirect-urls).
 
   Keep the Magic Link email's login anchor on `{{ .ConfirmationURL }}` so Supabase verifies the token before redirecting. Do not hard-code localhost or replace the verification link with a plain site URL. Request a new email from the production site after correcting configuration; existing emails retain their old destination. [Supabase email templates](https://supabase.com/docs/guides/auth/auth-email-templates).
   For installed Android/iOS apps, copy `supabase/templates/magic-link.html` into Supabase **Authentication → Emails → Magic link or OTP → Body**. It includes `{{ .Token }}` alongside the existing link. The login form verifies the emailed code inside the current app using `verifyOtp({ email, token, type: "email" })`; users can return to code entry after a reload without requesting another email. Git/Vercel deployment does not update Supabase email templates automatically.
@@ -117,7 +120,40 @@
 
   Running a local `feishu2md` process, storing a `configId`, and configuring OBS are not required.
 
-  For local end-to-end verification, use `npx vercel dev` so both Vite pages and `/api` Functions
-  run on the same origin. Plain `npm run dev` starts only Vite and is suitable for frontend-only
-  work; it does not execute Vercel Functions. Put the server-only values in the local Vercel
-  environment or `.env.local` before testing a real Feishu document.
+  For local end-to-end verification, run `npm run dev`. The local API adapter executes the
+  same handlers as production and streams image responses. Put server-only values in `.env.local`
+  before testing a real Feishu document. `vite preview` only serves the built frontend; it is
+  not a replacement for this development server or a production API runtime.
+
+  ## Persistent bookmark covers
+
+  All bookmark platforms use the same save-time cover archive, including manually supplied
+  covers and bookmarklet/mobile captures. Apply `010_bookmark_cover_storage.sql` in Supabase
+  before deploying the new `/api/bookmarks` handler. No new credentials are needed.
+
+  Covers are downloaded on the server (8 MiB maximum; JPG, PNG, WebP, GIF and AVIF), validated,
+  and uploaded unchanged to the private `bookmark-covers` bucket with a content-hash filename.
+  `cover_url` retains the source; `cover_storage_path` is the durable reference. No expiring
+  signed download URL is persisted. The browser downloads with Supabase credentials; Storage
+  RLS follows the linked bookmark/collection visibility. Anonymous visitors cannot read private
+  or unreferenced images. Existing archived covers are reused when editing other fields.
+
+  Downloads validate DNS and pin the socket to a public IP on every redirect. If a local VPN
+  returns synthetic `198.18/15` DNS addresses, a fixed Cloudflare HTTPS resolver supplies real
+  addresses, which still pass the public-IP check. Internal addresses, SVG/HTML and large
+  responses are rejected. Failed archives keep the draft and provide an actionable error.
+
+  Backfill existing records (dry-run by default):
+
+  ```bash
+  npm run covers:backfill -- --report /tmp/cover-preview.json
+  npm run covers:backfill -- --apply --report /tmp/cover-migration.json
+  ```
+
+  The script loads `.env.local`, skips archived/empty covers, tries fresh metadata for expired
+  sources, and leaves unavailable images unchanged. Known platform default logos are not
+  substituted for resource covers. Conditional updates protect concurrent edits; reruns reuse
+  content hashes. The migration report contains record IDs and results, not credentials.
+  Removing a bookmark does not automatically delete its image, allowing recovery; unreferenced
+  objects remain private. `scripts/db/verify-bookmark-covers.sql` verifies access with a rolled-back
+  transaction. Supabase Storage is required; a plain PostgreSQL instance has no object store.

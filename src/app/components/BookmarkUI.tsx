@@ -9,6 +9,28 @@ import {
   type Bookmark,
 } from "../content/bookmarks";
 import "../../styles/bookmarks.css";
+import { downloadBookmarkCover } from "../content/bookmarkRepository";
+
+function useBookmarkCover(bookmark: Bookmark) {
+  const path = bookmark.cover_storage_path;
+  const [loaded, setLoaded] = useState<{ path: string; url: string }>();
+  useEffect(() => {
+    if (!path) return;
+    let active = true;
+    let objectUrl = "";
+    void downloadBookmarkCover(path).then(blob => {
+      if (!active) return;
+      objectUrl = URL.createObjectURL(blob);
+      setLoaded({ path, url: objectUrl });
+    }).catch(() => { /* Missing access or files keep the platform placeholder. */ });
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [path]);
+  // Once archived, never retry the expiring external URL or expose a private cover.
+  return path ? loaded?.path === path ? loaded.url : "" : bookmark.cover_url;
+}
 
 export function BookmarkLayout({
   darkMode,
@@ -85,7 +107,8 @@ export function BookmarkCard({
   children?: ReactNode;
 }) {
   const [broken, setBroken] = useState(false);
-  useEffect(() => setBroken(false), [bookmark.cover_url]);
+  const cover = useBookmarkCover(bookmark);
+  useEffect(() => setBroken(false), [cover]);
   const platform = PLATFORMS[bookmark.platform] ?? PLATFORMS.other;
   let href = "";
   try {
@@ -106,9 +129,9 @@ export function BookmarkCard({
           className="bookmark-cover"
           style={{ "--platform-color": platform.color } as React.CSSProperties}
         >
-          {bookmark.cover_url && !broken ? (
+          {cover && !broken ? (
             <img
-              src={bookmark.cover_url}
+              src={cover}
               alt=""
               loading="lazy"
               referrerPolicy="no-referrer"

@@ -37,10 +37,30 @@ let repository: any,
   context: any,
   Form: any,
   Collect: any,
-  Admin: any;
+  Admin: any,
+  Card: any;
 const originals = new Map<string, PropertyDescriptor | undefined>();
 let writes: { table: string; payload: any }[];
 let failSave = false;
+test("stored covers load with Supabase permissions, never the expired original URL, and release blob URLs", async () => {
+  const revoked: string[] = [];
+  mock.method(repository.getSupabaseClient().storage, "from", (bucket: string) => ({ download: async (path: string) => {
+    assert.equal(bucket, "bookmark-covers"); assert.equal(path, "hash.png");
+    return { data: new Blob(["image"], { type: "image/png" }), error: null };
+  } }));
+  mock.method(URL, "createObjectURL", () => "blob:archived-cover");
+  mock.method(URL, "revokeObjectURL", (url: string) => { revoked.push(url); });
+  await mount(React.createElement(Card, { bookmark: { id: "stored", url: "https://example.com", title: "资源", platform: "other", cover_url: "https://expired.example/image", cover_storage_path: "hash.png" } }));
+  assert.equal(host.querySelector("img")?.getAttribute("src"), "blob:archived-cover");
+  await act(async () => root!.unmount()); root = undefined;
+  assert.deepEqual(revoked, ["blob:archived-cover"]);
+});
+
+test("a denied stored cover stays hidden instead of falling back to an external URL", async () => {
+  mock.method(repository.getSupabaseClient().storage, "from", () => ({ download: async () => ({ data: null, error: new Error("denied") }) }));
+  await mount(React.createElement(Card, { bookmark: { id: "private", url: "https://example.com", title: "私有", platform: "other", cover_url: "https://expired.example/image", cover_storage_path: "private.png" } }));
+  assert.equal(host.querySelector("img"), null);
+});
 before(async () => {
   dom = new JSDOM("<!doctype html><body></body>", {
     url: "http://localhost",
@@ -88,6 +108,7 @@ before(async () => {
   ({ AdminBookmarks: Admin } = await server.ssrLoadModule(
     "/src/app/pages/AdminBookmarks.tsx",
   ));
+  ({ BookmarkCard: Card } = await server.ssrLoadModule("/src/app/components/BookmarkUI.tsx"));
 });
 afterEach(async () => {
   if (root) {
@@ -116,6 +137,16 @@ function stubDatabase() {
     data: { user: { id: "admin", app_metadata: { role: "admin" } } },
     error: null,
   }));
+  mock.method(db.auth, "getSession", async () => ({ data: { session: { access_token: "admin-test" } }, error: null }));
+  mock.method(globalThis, "fetch", async (url: string, options?: RequestInit) => {
+    assert.equal(url, "/api/bookmarks");
+    assert.equal(new Headers(options?.headers).get("authorization"), "Bearer admin-test");
+    const body = JSON.parse(String(options?.body));
+    writes.push({ table: "bookmarks", payload: body.draft });
+    return failSave
+      ? Response.json({ success: false, message: "网络断开，请重试" }, { status: 503 })
+      : Response.json({ success: true, data: { id: "saved", ...body.draft, cover_storage_path: "stored.png" } });
+  });
   return mock.method(db, "from", (table: string) => {
     let payload: any;
     const query: any = {};
@@ -264,9 +295,11 @@ test("failed saving retains the draft and never announces success", async () => 
 });
 test("Android pasted sharing text remains saveable when Douyin metadata is unavailable", async () => {
   stubDatabase();
-  mock.method(repository.getSupabaseClient().auth, "getSession", async () => ({ data: { session: { access_token: "test" } }, error: null }));
   let saved: any;
-  mock.method(globalThis, "fetch", async () => Response.json({ success: false, message: "未读取到标题或封面，可以手动填写后保存。" }, { status: 422 }));
+  const saveRequest = globalThis.fetch;
+  mock.method(globalThis, "fetch", async (url: string, options?: RequestInit) => url === "/api/bookmarks"
+    ? saveRequest(url, options)
+    : Response.json({ success: false, message: "未读取到标题或封面，可以手动填写后保存。" }, { status: 422 }));
   const text = "3.84 复制打开抖音，看看【笑出苹果肌（万岁山搞笑没门版）的作品】这哥们儿真男人！# 万岁山武侠城 # 万岁山老嫂子... https://v.douyin.com/U3W4xeBm6Ns/ 10/21 b@N.jP FUY:/ :2pm";
   await mount(React.createElement(Form, {
     collections: [box], onCollectionCreated() {}, onSaved(item: any) { saved = item; },

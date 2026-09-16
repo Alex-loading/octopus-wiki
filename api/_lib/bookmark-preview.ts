@@ -29,6 +29,12 @@ export function allowedPreviewUrl(value: string): URL {
     throw new Error("这个链接暂不支持自动读取，请手动填写标题和封面。");
   return url;
 }
+export function isPlaceholderCover(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.hostname === "picasso-static.xiaohongshu.com" && url.pathname.startsWith("/fe-platform/");
+  } catch { return false; }
+}
 export async function readBoundedText(
   response: Response,
   maxBytes: number,
@@ -122,6 +128,7 @@ export function parsePreviewHtml(
         url.protocol = "https:";
       if (
         url.protocol === "https:" &&
+        !isPlaceholderCover(url.href) &&
         /[a-z]/i.test(url.hostname) &&
         url.hostname.includes(".") &&
         !/\.(local|localhost|internal)$/i.test(url.hostname)
@@ -147,7 +154,11 @@ export async function fetchBookmarkPreview(
       signal,
       headers: {
         Accept: "text/html",
-        "User-Agent": "OctopusWiki-LinkPreview/1.0",
+        // XHS serves only the platform logo to non-browser preview agents,
+        // while its public desktop HTML contains the note's signed images.
+        "User-Agent": url.hostname === "xiaohongshu.com" || url.hostname.endsWith(".xiaohongshu.com")
+          ? "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+          : "OctopusWiki-LinkPreview/1.0",
       },
     });
     if ([301, 302, 303, 307, 308].includes(response.status)) {

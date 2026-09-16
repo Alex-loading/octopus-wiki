@@ -31,7 +31,7 @@ async function request<T>(
     cache: "no-store",
     headers,
     ...(body ? { body: JSON.stringify(body) } : {}),
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(body?.action === "create-bookmark" ? 90000 : 15000),
   });
   const result = await response.json().catch(() => null);
   if (!response.ok || !result?.success)

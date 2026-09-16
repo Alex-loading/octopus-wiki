@@ -90,12 +90,23 @@ export async function saveBookmark(
 ): Promise<Bookmark> {
   const payload = validateBookmarkDraft(draft);
   const db = await adminClient();
-  const query = id
-    ? db.from("bookmarks").update(payload).eq("id", id)
-    : db.from("bookmarks").insert(payload);
-  const { data, error } = await query.select("*").single();
-  fail(error);
-  return data as Bookmark;
+  const { data, error } = await db.auth.getSession();
+  if (error || !data.session) throw new Error("请先登录管理员账号。");
+  const response = await fetch("/api/bookmarks", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+    body: JSON.stringify({ draft: payload, ...(id ? { id } : {}) }),
+    signal: AbortSignal.timeout(90000),
+  });
+  const result = await response.json().catch(() => null);
+  if (!response.ok || !result?.success) throw new Error(result?.message || "收藏保存失败，请稍后重试。");
+  return result.data as Bookmark;
+}
+
+export async function downloadBookmarkCover(path: string): Promise<Blob> {
+  const { data, error } = await client().storage.from("bookmark-covers").download(path);
+  if (error || !data) throw new Error("封面加载失败。");
+  return data;
 }
 export async function saveBookmarkCollection(
   draft: CollectionDraft,

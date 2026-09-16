@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
+import { BookmarkSaveError } from "./_lib/bookmark-save.ts";
 import {
   validateBookmarkDraft,
   validateCollectionDraft,
@@ -229,11 +230,11 @@ export function createCollectorHandler(dependencies: {
         {
           success: false,
           message:
-            error instanceof CollectorError
+            error instanceof CollectorError || error instanceof BookmarkSaveError
               ? error.message
               : "收藏服务暂时不可用，请稍后重试。",
         },
-        error instanceof CollectorError ? error.status : 503,
+        error instanceof CollectorError || error instanceof BookmarkSaveError ? error.status : 503,
       );
     }
   };

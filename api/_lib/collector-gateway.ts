@@ -9,6 +9,7 @@ import type {
   CollectionDraft,
   validateBookmarkDraft,
 } from "../../src/app/content/bookmarks.ts";
+import { saveStoredBookmark } from "./bookmark-save.ts";
 
 export type CaptureDevice = {
   user_id: string;
@@ -130,13 +131,7 @@ export class SupabaseCollectorGateway implements CollectorGateway {
     }
   }
   async createBookmark(payload: ReturnType<typeof validateBookmarkDraft>) {
-    const { data, error } = await this.client
-      .from("bookmarks")
-      .insert(payload)
-      .select("*")
-      .single();
-    fail(error);
-    return data as Bookmark;
+    return saveStoredBookmark(this.client, payload);
   }
   async createCollection(payload: CollectionDraft) {
     const { data, error } = await this.client
