@@ -1,0 +1,106 @@
+{
+  "sourceUrl": "https://octopus-wiki.vercel.app/post/all-about-langchain",
+  "docToken": "KErbdRTfaoTcPdxR5RlcNSq8nFh",
+  "title": "LangChain",
+  "revisionId": "2752",
+  "blocks": [
+    {
+      "block_id": "KErbdRTfaoTcPdxR5RlcNSq8nFh",
+      "block_type": 1,
+      "children": ["DsCrdPCcpopvbFxHwbNcgePSngh", "AuyfdQaSbosULcxTBKEcf3jbnVg"],
+      "page": {
+        "elements": [{"text_run": {"content": "LangChain", "text_element_style": {}}}],
+        "style": {"align": 1}
+      },
+      "parent_id": ""
+    },
+    {
+      "block_id": "DsCrdPCcpopvbFxHwbNcgePSngh",
+      "block_type": 12,
+      "bullet": {
+        "elements": [{"text_run": {"content": "Configure the Harness：配置Harness各种中间件", "text_element_style": {}}}],
+        "style": {"align": 1, "folded": false}
+      },
+      "children": ["G0cQduahqoSm7dxYigkcTSVXnqb"],
+      "parent_id": "KErbdRTfaoTcPdxR5RlcNSq8nFh"
+    },
+    {
+      "block_id": "G0cQduahqoSm7dxYigkcTSVXnqb",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {"text_run": {"content": "Context management", "text_element_style": {"bold": true, "text_color": 5}}},
+          {"text_run": {"content": "：上下文管理，每个模型调用都有一个固定的上下文窗口", "text_element_style": {}}}
+        ],
+        "style": {"align": 1, "folded": false}
+      },
+      "children": ["TcPtdV7aoosJWKxNy1wcKmaEnuf", "Yh4fdDqzuoiSzfxnGCScGebknDh"],
+      "parent_id": "DsCrdPCcpopvbFxHwbNcgePSngh"
+    },
+    {
+      "block_id": "TcPtdV7aoosJWKxNy1wcKmaEnuf",
+      "block_type": 12,
+      "bullet": {
+        "elements": [{"text_run": {"content": "各类skill更具需要被调用出来", "text_element_style": {}}}],
+        "style": {"align": 1, "folded": false}
+      },
+      "parent_id": "G0cQduahqoSm7dxYigkcTSVXnqb"
+    },
+    {
+      "block_id": "Yh4fdDqzuoiSzfxnGCScGebknDh",
+      "block_type": 14,
+      "code": {
+        "elements": [
+          {"text_run": {"content": "from deepagents.backends import StateBackend\nfrom deepagents.middleware import FilesystemMiddleware, MemoryMiddleware, SkillsMiddleware, SummarizationMiddleware\n\nbackend = StateBackend()\nmodel = \"openai:gpt-5.5\"\n\nagent = create_agent(\n    model=model,\n    tools=[search],\n    middleware=[\n        FilesystemMiddleware(backend=backend),\n        SummarizationMiddleware(model=model, backend=backend),\n        MemoryMiddleware(backend=backend, sources=[\"./AGENTS.md\"]),\n        SkillsMiddleware(backend=backend, sources=[\"./skills/\"]),\n    ],\n", "text_element_style": {}}},
+          {"text_run": {"content": ")", "text_element_style": {}}}
+        ],
+        "style": {"language": 49, "wrap": false}
+      },
+      "parent_id": "G0cQduahqoSm7dxYigkcTSVXnqb"
+    },
+    {
+      "block_id": "AuyfdQaSbosULcxTBKEcf3jbnVg",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {"text_run": {"content": "使用 ", "text_element_style": {}}},
+          {"text_run": {"content": "@tool", "text_element_style": {"inline_code": true}}},
+          {"text_run": {"content": " 装饰器", "text_element_style": {}}}
+        ],
+        "style": {"align": 1, "folded": false}
+      },
+      "children": ["NcTcdudeaoVIzCxAuu5cuOH5nOh", "RN7ldaL0no97O9xDgDGc3cKRnwU", "Cb2xdjSHVobHCcxEM24cHjSin9b"],
+      "parent_id": "KErbdRTfaoTcPdxR5RlcNSq8nFh"
+    },
+    {
+      "block_id": "NcTcdudeaoVIzCxAuu5cuOH5nOh",
+      "block_type": 14,
+      "code": {
+        "elements": [
+          {"text_run": {"content": "from langchain.tools import tool\n\n@tool\ndef search_database(query: str, limit: int = 10) -> str:\n    \"\"\"Search the customer database for records matching the query.\n\n    Args:\n        query: Search terms to look for\n        limit: Maximum number of results to return\n    \"\"\"\n    return f\"Found {limit} results for '{query}'\"\n    \n# 自定义工具名称与描述\n@tool(\"calculator\", description=\"Performs arithmetic calculations. Use this for any math problems.\")\ndef calc(expression: str) -> str:\n    \"\"\"Evaluate mathematical expressions.\"\"\"\n", "text_element_style": {}}},
+          {"text_run": {"content": "    return str(eval(expression))", "text_element_style": {}}}
+        ],
+        "style": {"language": 49, "wrap": false}
+      },
+      "parent_id": "AuyfdQaSbosULcxTBKEcf3jbnVg"
+    },
+    {
+      "block_id": "RN7ldaL0no97O9xDgDGc3cKRnwU",
+      "block_type": 12,
+      "bullet": {
+        "elements": [{"text_run": {"content": "函数的docstring会成为工具的说明，应当简介明了，帮助模型理解何时调用", "text_element_style": {}}}],
+        "style": {"align": 1, "folded": false}
+      },
+      "parent_id": "AuyfdQaSbosULcxTBKEcf3jbnVg"
+    },
+    {
+      "block_id": "Cb2xdjSHVobHCcxEM24cHjSin9b",
+      "block_type": 12,
+      "bullet": {
+        "elements": [{"text_run": {"content": "参数需要提供类型提示", "text_element_style": {}}}],
+        "style": {"align": 1, "folded": false}
+      },
+      "parent_id": "AuyfdQaSbosULcxTBKEcf3jbnVg"
+    }
+  ]
+}

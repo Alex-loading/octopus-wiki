@@ -18,3 +18,6 @@ pnpm-debug.log*
 # macOS
 .DS_Store
 .vercel
+
+# 本地诊断数据
+.debug/

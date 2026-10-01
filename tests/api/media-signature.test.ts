@@ -27,3 +27,13 @@ test("rejects tampering and unsupported media types", () => {
   assert.equal(verifyMediaRequest("file-token", "file", "short", secret), false);
   assert.throws(() => signMediaRequest("token", "video" as never, secret));
 });
+
+test("画板资源地址包含裁剪版本并保留有效签名", () => {
+  const url = new URL(buildSignedMediaUrl("board-token", "board", secret), "https://example.com");
+  assert.equal(url.searchParams.get("v"), "board-trim-v1");
+  assert.equal(verifyMediaRequest("board-token", "board", url.searchParams.get("sig")!, secret), true);
+  for (const type of ["image", "file"] as const) {
+    const mediaUrl = new URL(buildSignedMediaUrl("media-token", type, secret), "https://example.com");
+    assert.equal(mediaUrl.searchParams.has("v"), false);
+  }
+});

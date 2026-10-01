@@ -1,0 +1,44 @@
+{
+  "sourceUrl": "https://octopus-wiki.vercel.app/post/all-about-langchain",
+  "docToken": "KErbdRTfaoTcPdxR5RlcNSq8nFh",
+  "title": "LangChain",
+  "revisionId": "3046",
+  "rawContent": "Model：模型，接受一个provider:model 的字符串或者一个已经初始化的模型实例\n接受初始化的模型实例\nfrom langchain.agents import create_agent\nfrom langchain_deepseek import ChatDeepSeek\nfrom demo.tools import get_weather\n\ndef build_agent():\n    llm = ChatDeepSeek(\n        model=\"deepseek-chat\",\n        temperature=0,\n        timeout=30,\n        max_retries=0,\n    )\n\n    return create_agent(\n        model=llm,\n        tools=[get_weather],\n        system_prompt=\"请使用中文回答，依据工具返回的信息作答。\",\n    )\n",
+  "blocks": [
+    {
+      "block_id": "KErbdRTfaoTcPdxR5RlcNSq8nFh",
+      "block_type": 1,
+      "children": ["XY7JdPbXzo6bebx5G5kc699NnNf", "ZDfYdSzf8oSAMAxPUjxcgrtonpb"],
+      "page": {
+        "elements": [{"text_run": {"content": "LangChain", "text_element_style": {}}}],
+        "style": {"align": 1}
+      },
+      "parent_id": ""
+    },
+    {
+      "block_id": "XY7JdPbXzo6bebx5G5kc699NnNf",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {"text_run": {"content": "Model：模型，接受一个", "text_element_style": {}}},
+          {"text_run": {"content": "provider:model", "text_element_style": {"inline_code": true}}},
+          {"text_run": {"content": " 的字符串或者一个已经初始化的模型实例", "text_element_style": {}}}
+        ],
+        "style": {"align": 1, "folded": false}
+      },
+      "parent_id": "KErbdRTfaoTcPdxR5RlcNSq8nFh"
+    },
+    {
+      "block_id": "ZDfYdSzf8oSAMAxPUjxcgrtonpb",
+      "block_type": 14,
+      "code": {
+        "elements": [
+          {"text_run": {"content": "from langchain.agents import create_agent\nfrom langchain_deepseek import ChatDeepSeek\nfrom demo.tools import get_weather\n\ndef build_agent():\n    llm = ChatDeepSeek(\n        model=\"deepseek-chat\",\n        temperature=0,\n        timeout=30,\n        max_retries=0,\n    )\n\n    return create_agent(\n        model=llm,\n        tools=[get_weather],\n        system_prompt=\"请使用中文回答，依据工具返回的信息作答。\",\n", "text_element_style": {}}},
+          {"text_run": {"content": "    )", "text_element_style": {}}}
+        ],
+        "style": {"language": 49, "wrap": false}
+      },
+      "parent_id": "KErbdRTfaoTcPdxR5RlcNSq8nFh"
+    }
+  ]
+}

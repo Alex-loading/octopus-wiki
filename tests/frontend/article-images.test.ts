@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ArticleImage } from "../../src/app/components/ArticleImage.tsx";
 import { losslessArticleImageSource } from "../../src/app/content/articleImages.ts";
+import { buildSignedMediaUrl } from "../../api/_lib/media-signature.ts";
 
 const original = "/api/feishu-media?token=image-token&type=image&sig=signature";
 
@@ -34,4 +35,14 @@ test("external images keep their original URL without a picture wrapper", () => 
   const html = renderToStaticMarkup(createElement(ArticleImage, { src: "https://images.example.com/a.jpg", alt: "photo" }));
   assert.doesNotMatch(html, /picture|source|format=/);
   assert.match(html, /src="https:\/\/images.example.com\/a.jpg"/);
+});
+
+test("画板的两种图片地址都保留裁剪版本参数", () => {
+  const board = buildSignedMediaUrl("board-token", "board", "signing-secret");
+  const optimized = losslessArticleImageSource(board)!;
+  assert.equal(new URL(board, "https://example.com").searchParams.get("v"), "board-trim-v1");
+  assert.equal(new URL(optimized, "https://example.com").searchParams.get("v"), "board-trim-v1");
+  const html = renderToStaticMarkup(createElement(ArticleImage, { src: board, alt: "飞书画板" }));
+  assert.match(html, /<source[^>]+v=board-trim-v1&amp;format=webp-lossless-v1/);
+  assert.match(html, /<img[^>]+v=board-trim-v1/);
 });

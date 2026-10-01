@@ -1,6 +1,7 @@
 import type { FeishuClient } from "./_lib/feishu.ts";
 import { createFeishuClientFromEnv, FeishuError } from "./_lib/feishu.ts";
 import { optimizeFeishuImage } from "./_lib/image-optimization.ts";
+import { trimFeishuWhiteboard } from "./_lib/whiteboard-image.ts";
 import {
   isFeishuMediaType,
   verifyMediaRequest,
@@ -36,7 +37,8 @@ export function createFeishuMediaHandler(dependencies: MediaHandlerDependencies)
 
     try {
       const original = await dependencies.client.downloadMedia(token, type);
-      const upstream = format === "webp-lossless-v1" ? await optimizeFeishuImage(original) : original;
+      const image = type === "board" ? await trimFeishuWhiteboard(original) : original;
+      const upstream = format === "webp-lossless-v1" ? await optimizeFeishuImage(image) : image;
       const headers = new Headers({
         "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
         "Content-Type": upstream.headers.get("Content-Type") ?? "application/octet-stream",

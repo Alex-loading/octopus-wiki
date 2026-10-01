@@ -97,10 +97,9 @@
   Before deployment, run `npm run db:init` so migration
   `database/migrations/003_feishu_live_content.sql` adds the Feishu link and snapshot metadata.
 
-  In the Feishu developer console, grant the application read access for the APIs used by this
-  project: Wiki node lookup, Docx document metadata and block listing, Drive media download, and
-  Board image download when documents contain whiteboards. The application must also be able to
-  access each linked document.
+  在飞书开发者后台，为应用身份开通项目使用的权限，包括读取 Wiki 节点、Docx 文档和内容块，
+  下载文档图片与附件。含有画板的文章还需要 `board:whiteboard:node:read`，并发布包含该权限的
+  飞书应用版本。应用还需要具有每篇关联文档的访问权限。
 
   Public linked articles are refreshed through `/api/feishu-content` with a 60-second CDN cache.
   Images and attachments use signed `/api/feishu-media` URLs. Article images use `<picture>`
@@ -119,6 +118,10 @@
   `Accept`-dependent CDN variants; increment its version when changing the encoding policy.
   Replacing a Feishu image normally gives it a new media token/URL; same-token content updates
   remain subject to the cache lifetimes. List covers below the initial rows load lazily.
+
+  画板下载通过 sharp 根据内容范围去除外围白色和透明区域，四周保留 24 像素边距。
+  输出图片的长宽比例由内容决定，并使用 PNG 保存解码后的完整内容；WebP 请求在裁剪后进行
+  无损转换。画板资源地址包含 `v=board-trim-v1`，裁剪规则更新时需要同时更新此版本。
 
   Running a local `feishu2md` process, storing a `configId`, and configuring OBS are not required.
 

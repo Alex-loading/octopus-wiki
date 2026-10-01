@@ -65,6 +65,7 @@ export type FeishuDocument = {
   title: string;
   revisionId: string;
   blocks: FeishuBlock[];
+  rawContent?: string;
 };
 
 type FeishuClientOptions = {
@@ -183,19 +184,27 @@ export class FeishuClient {
     return blocks;
   }
 
-  async fetchDocument(rawUrl: string): Promise<FeishuDocument> {
+  async fetchDocument(rawUrl: string, options: { includeRawContent?: boolean } = {}): Promise<FeishuDocument> {
     const reference = parseFeishuDocumentUrl(rawUrl);
     const docToken = await this.resolveDocToken(reference);
+    const documentPath = `/docx/v1/documents/${encodeURIComponent(docToken)}`;
     const metadata = await this.requestJson<{
       document?: { title?: string; revision_id?: string | number };
-    }>(`/docx/v1/documents/${encodeURIComponent(docToken)}`);
-    const blocks = await this.fetchBlocks(docToken);
+    }>(documentPath);
+    const [blocks, rawContent] = await Promise.all([
+      this.fetchBlocks(docToken),
+      options.includeRawContent ? this.requestJson<{ content?: string }>(`${documentPath}/raw_content`) : undefined,
+    ]);
+    if (options.includeRawContent && typeof rawContent?.content !== "string") {
+      throw new FeishuError("FEISHU_API_ERROR", "飞书纯文本接口缺少 content 字段。", 502);
+    }
 
     return {
       docToken,
       title: metadata.document?.title ?? "未命名飞书文档",
       revisionId: String(metadata.document?.revision_id ?? ""),
       blocks,
+      ...(rawContent ? { rawContent: rawContent.content } : {}),
     };
   }
 

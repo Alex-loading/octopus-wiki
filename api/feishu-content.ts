@@ -89,7 +89,7 @@ function getRuntimeHandlers(): ReturnType<typeof createFeishuContentHandlers> {
   runtimeHandlers = createFeishuContentHandlers({
     gateway,
     fetchMarkdown: async (docUrl) => {
-      const document = await client.fetchDocument(docUrl);
+      const document = await client.fetchDocument(docUrl, { includeRawContent: true });
       const converted = convertFeishuDocumentToMarkdown(document, signingSecret);
       return {
         markdown: converted.markdown,

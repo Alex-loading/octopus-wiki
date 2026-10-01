@@ -1,7 +1,81 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
+import { MarkdownRenderer } from "feishu-docx";
+import { JSDOM } from "jsdom";
 
 import { convertFeishuDocumentToMarkdown } from "../../api/_lib/markdown.ts";
+import type { FeishuDocument } from "../../api/_lib/feishu.ts";
+
+const langchainDocument: FeishuDocument = JSON.parse(
+  readFileSync(new URL("../fixtures/feishu-langchain-code.json", import.meta.url), "utf8"),
+);
+
+const captionDocument: FeishuDocument = JSON.parse(
+  readFileSync(new URL("../fixtures/feishu-langchain-code-caption.json", import.meta.url), "utf8"),
+);
+
+test("通过飞书纯文本读取代码说明，同时完整保留代码正文", () => {
+  const { markdown } = convertFeishuDocumentToMarkdown(captionDocument, "signing-secret");
+  assert.match(markdown, /```py feishu-caption="接受初始化的模型实例"/);
+  const renderer = new MarkdownRenderer({});
+  const document = new JSDOM(renderer.markdownToHTML(markdown)).window.document;
+  const source = captionDocument.blocks.find((block) => block.block_type === 14)!;
+  const code = source.code as { elements: { text_run: { content: string } }[] };
+  assert.equal(document.querySelector("pre > code")?.textContent,
+    `${code.elements.map((element) => element.text_run.content).join("")}\n`);
+});
+
+test("缺少代码说明时保留普通段落，不使用前文作为代码标题", () => {
+  const rawContent = captionDocument.rawContent!.replace("接受初始化的模型实例\n", "");
+  const { markdown } = convertFeishuDocumentToMarkdown({ ...captionDocument, rawContent }, "signing-secret");
+  assert.doesNotMatch(markdown, /feishu-caption=/);
+  assert.match(markdown, /Model：模型，接受一个/);
+});
+
+test("代码正文在纯文本中重复时不关联无法确定归属的说明", () => {
+  const { markdown } = convertFeishuDocumentToMarkdown({
+    ...captionDocument,
+    rawContent: `${captionDocument.rawContent}\n${captionDocument.rawContent}`,
+  }, "signing-secret");
+  assert.doesNotMatch(markdown, /feishu-caption=/);
+});
+
+function renderLangchainDocument(): Document {
+  const converted = convertFeishuDocumentToMarkdown(langchainDocument, "signing-secret");
+  const renderer = new MarkdownRenderer({});
+  return new JSDOM(renderer.markdownToHTML(converted.markdown)).window.document;
+}
+
+function originalCode(blockId: string): string {
+  const block = langchainDocument.blocks.find((item) => item.block_id === blockId);
+  assert.ok(block);
+  const code = block.code as { elements: { text_run: { content: string } }[] };
+  return code.elements.map((element) => element.text_run.content).join("");
+}
+
+test("多层列表中的代码块保留完整代码及函数缩进", () => {
+  const document = renderLangchainDocument();
+  const code = [...document.querySelectorAll("pre > code")]
+    .find((element) => element.textContent?.includes("StateBackend"));
+
+  assert.ok(code);
+  assert.equal(code.className, "language-py");
+  assert.equal(code.textContent, `${originalCode("Yh4fdDqzuoiSzfxnGCScGebknDh")}\n`);
+  assert.match(code.closest("li")?.textContent ?? "", /Context management/);
+});
+
+test("装饰器代码中的空行和 Args 内容保留在同一个代码块", () => {
+  const document = renderLangchainDocument();
+  const code = [...document.querySelectorAll("pre > code")]
+    .find((element) => element.textContent?.includes("search_database"));
+
+  assert.ok(code);
+  assert.equal(code.textContent, `${originalCode("NcTcdudeaoVIzCxAuu5cuOH5nOh")}\n`);
+  assert.equal(document.querySelectorAll("pre").length, 2);
+  assert.ok([...document.querySelectorAll("li")]
+    .some((element) => element.textContent === "参数需要提供类型提示"));
+});
 
 const blocks = [
   {
@@ -114,6 +188,6 @@ test("uses the first visual media as the cover candidate and ignores files", () 
 
   assert.match(
     result.coverImage ?? "",
-    /^\/api\/feishu-media\?token=board-token&type=board&sig=[a-f0-9]{64}$/,
+    /^\/api\/feishu-media\?token=board-token&type=board&sig=[a-f0-9]{64}&v=board-trim-v1$/,
   );
 });

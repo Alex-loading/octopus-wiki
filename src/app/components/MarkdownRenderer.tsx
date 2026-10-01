@@ -1,4 +1,4 @@
-import React, { useState, type CSSProperties } from "react";
+import React, { useMemo, useState, type CSSProperties } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -6,12 +6,11 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import {
-  oneDark,
-  oneLight,
-} from "react-syntax-highlighter/dist/esm/styles/prism";
-import { Check, Copy, ImageOff } from "lucide-react";
+import type { Root as HastRoot } from "hast";
+import type { Root as MdastRoot } from "mdast";
+import { visit } from "unist-util-visit";
+import { ImageOff } from "lucide-react";
+import { ArticleCodeBlock } from "./ArticleCodeBlock";
 import { ArticleImage } from "./ArticleImage";
 
 const CALLOUT_CLASS_PATTERN = /^callout$/;
@@ -89,7 +88,7 @@ const markdownSanitizeSchema = {
       "ariaHidden",
       "tabIndex",
     ],
-    code: [...(defaultSchema.attributes?.code ?? []), "className"],
+    code: [...(defaultSchema.attributes?.code ?? []), "className", "dataFeishuCodeCaption"],
     pre: [...(defaultSchema.attributes?.pre ?? []), "className"],
     span: [...(defaultSchema.attributes?.span ?? []), "className"],
     div: [
@@ -113,6 +112,30 @@ const markdownSanitizeSchema = {
     ],
   },
 };
+
+function remarkFeishuCodeCaptions() {
+  return (tree: MdastRoot) => {
+    visit(tree, "code", (node) => {
+      if (!node.meta?.startsWith("feishu-caption=")) return;
+      const caption: unknown = JSON.parse(node.meta.slice("feishu-caption=".length));
+      if (typeof caption !== "string") throw new Error("飞书代码块说明必须为字符串。");
+      node.data = {
+        ...node.data,
+        hProperties: { ...node.data?.hProperties, dataFeishuCodeCaption: caption },
+      };
+    });
+  };
+}
+
+function rehypeArticleCodeBlocks() {
+  return (tree: HastRoot) => {
+    visit(tree, "element", (node, _index, parent) => {
+      if (node.tagName === "code" && parent?.type === "element" && parent.tagName === "pre") {
+        node.data = { ...node.data, articleCodeBlock: true };
+      }
+    });
+  };
+}
 
 function classColorIndex(className: string | undefined, prefix: string): number | null {
   const token = className?.split(/\s+/).find((item) => item.startsWith(prefix));
@@ -191,20 +214,7 @@ export function MarkdownRenderer({
   content: string;
   dm: boolean;
 }) {
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-  const handleCopyCode = async (rawCode: string) => {
-    if (!rawCode) return;
-    try {
-      await navigator.clipboard.writeText(rawCode);
-      setCopiedCode(rawCode);
-      window.setTimeout(() => setCopiedCode((prev) => (prev === rawCode ? null : prev)), 1500);
-    } catch {
-      setCopiedCode(null);
-    }
-  };
-
-  const components: Components = {
+  const components = useMemo<Components>(() => ({
     h2: ({ children, ...props }) => (
       <h2
         {...props}
@@ -326,11 +336,10 @@ export function MarkdownRenderer({
       <MarkdownImage src={src} alt={alt} title={title} dm={dm} />
     ),
     pre: ({ children }) => <>{children}</>,
-    code: ({ className, children, ...props }) => {
+    code: ({ node, className, children, ...props }) => {
       const value = String(children ?? "").replace(/\n$/, "");
-      const isInlineCode = !className && !value.includes("\n");
 
-      if (isInlineCode) {
+      if (!node?.data?.articleCodeBlock) {
         return (
           <code
             {...props}
@@ -344,49 +353,17 @@ export function MarkdownRenderer({
         );
       }
 
-      const language = /language-([\w-]+)/.exec(className ?? "")?.[1] ?? "text";
-      const copied = copiedCode === value;
+      const language = className?.split(/\s+/)
+        .find((token) => token.startsWith("language-"))?.slice("language-".length) || "text";
+      const caption = node.properties.dataFeishuCodeCaption;
 
       return (
-        <div className="group relative my-5">
-          <button
-            type="button"
-            onClick={() => handleCopyCode(value)}
-            disabled={!value}
-            className={`absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-all duration-150 ${copied
-              ? "pointer-events-auto opacity-100"
-              : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100"
-              } ${dm
-                ? "border-white/10 bg-gray-800/90 text-gray-300 hover:text-white"
-                : "border-gray-200 bg-white/90 text-gray-500 hover:text-gray-900"
-              } ${!value ? "cursor-not-allowed opacity-60" : ""}`}
-            aria-label={copied ? "代码已复制" : "复制代码"}
-          >
-            {copied ? <Check size={12} /> : <Copy size={12} />}
-            {copied ? "已复制" : "复制"}
-          </button>
-          <SyntaxHighlighter
-            {...props}
-            language={language}
-            style={dm ? oneDark : oneLight}
-            customStyle={{
-              margin: 0,
-              borderRadius: "0.75rem",
-              border: dm ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgb(229,231,235)",
-              paddingTop: "0.75rem",
-              paddingBottom: "0.75rem",
-              paddingLeft: "1rem",
-              paddingRight: "1rem",
-              fontSize: "0.875rem",
-              lineHeight: "1.5rem",
-              overflowX: "auto",
-            }}
-            codeTagProps={{ className: "font-mono" }}
-            PreTag="div"
-          >
-            {value}
-          </SyntaxHighlighter>
-        </div>
+        <ArticleCodeBlock
+          value={value}
+          language={language}
+          caption={typeof caption === "string" ? caption : undefined}
+          dm={dm}
+        />
       );
     },
     table: ({ children, ...props }) => (
@@ -449,12 +426,12 @@ export function MarkdownRenderer({
         {children}
       </del>
     ),
-  };
+  }), [dm]);
 
   return (
     <div className="text-base">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkFeishuCodeCaptions]}
         rehypePlugins={[
           rehypeRaw,
           rehypeSlug,
@@ -466,6 +443,7 @@ export function MarkdownRenderer({
             },
           }],
           [rehypeSanitize, markdownSanitizeSchema],
+          rehypeArticleCodeBlocks,
         ]}
         components={components}
       >

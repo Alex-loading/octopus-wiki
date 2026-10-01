@@ -48,5 +48,6 @@ export function buildSignedMediaUrl(
     type,
     sig: signMediaRequest(token, type, secret),
   });
+  if (type === "board") params.set("v", "board-trim-v1");
   return `/api/feishu-media?${params.toString()}`;
 }
