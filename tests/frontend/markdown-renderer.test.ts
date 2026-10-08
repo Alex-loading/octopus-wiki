@@ -77,6 +77,14 @@ test("renders Markdown images as responsive lazy-loaded article media", async ()
   assert.match(html, /loading="lazy"/);
   assert.match(html, /decoding="async"/);
   assert.match(html, /max-w-full/);
+
+  const document = new JSDOM(html).window.document;
+  const trigger = document.querySelector('button[data-article-image-trigger]');
+  assert.ok(trigger);
+  assert.equal(trigger.getAttribute("aria-label"), "浏览图片：飞书图片");
+  assert.equal(trigger.getAttribute("aria-haspopup"), "dialog");
+  assert.equal(trigger.querySelector("img")?.getAttribute("alt"), "飞书图片");
+  assert.equal(document.querySelector('[role="dialog"]'), null);
 });
 
 test("真实飞书分栏在两种主题下显示全部图片并保留混合内容和列宽", async () => {

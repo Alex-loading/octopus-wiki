@@ -3,11 +3,71 @@ import test from "node:test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createServer } from "vite";
-import puppeteer, { type Browser } from "puppeteer-core";
+import puppeteer, { type Browser, type Page } from "puppeteer-core";
 import { convertFeishuDocumentToMarkdown } from "../../api/_lib/markdown.ts";
 import type { FeishuDocument } from "../../api/_lib/feishu.ts";
 
-test("真实飞书图片在宽屏和窄屏按列宽与内容顺序展示", { timeout: 120000 }, async () => {
+async function verifyImageViewer(page: Page) {
+  const triggers = await page.$$("[data-article-image-trigger]");
+  const images = await page.$$("img[data-article-image]");
+  assert.equal(triggers.length, images.length, "每张正文图片都可以打开浏览窗口。");
+  assert.ok(triggers.length >= 3);
+
+  for (const [index, trigger] of triggers.entries()) {
+    await trigger.scrollIntoView();
+    await trigger.$eval("img", async (image) => {
+      await (image as HTMLImageElement).decode();
+    });
+    await trigger.scrollIntoView();
+    await trigger.focus();
+    const source = await trigger.$eval("img", (image) => image.getAttribute("src"));
+    const scrollY = await page.evaluate(() => window.scrollY);
+    if (index % 3 === 0) await trigger.click();
+    if (index % 3 === 1) await page.keyboard.press("Enter");
+    if (index % 3 === 2) await page.keyboard.press("Space");
+    await page.waitForSelector('[role="dialog"]', { visible: true });
+
+    const preview = await page.$eval('[role="dialog"] img', async (element) => {
+      const image = element as HTMLImageElement;
+      await image.decode();
+      const bounds = image.getBoundingClientRect();
+      const dialog = image.closest('[role="dialog"]')!;
+      const title = document.getElementById(dialog.getAttribute("aria-labelledby")!);
+      return {
+        src: image.getAttribute("src"),
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+        contained: bounds.left >= 0 && bounds.top >= 0 && bounds.right <= innerWidth && bounds.bottom <= innerHeight,
+        scrollLocked: getComputedStyle(document.body).overflow === "hidden",
+        focused: dialog.contains(document.activeElement),
+        title: title?.textContent,
+      };
+    });
+    assert.equal(preview.src, source, "浏览窗口应显示当前点击的图片。");
+    assert.ok(preview.width > 0 && preview.height > 0);
+    assert.ok(preview.contained, "图片应完整显示在当前屏幕内。");
+    assert.ok(preview.scrollLocked);
+    assert.ok(preview.focused);
+    assert.ok(preview.title);
+    await page.keyboard.press("Tab");
+    assert.ok(await page.$eval('[role="dialog"]', (dialog) => dialog.contains(document.activeElement)));
+    await page.keyboard.press("Tab");
+    assert.ok(await page.$eval('[role="dialog"]', (dialog) => dialog.contains(document.activeElement)));
+
+    await page.click('[role="dialog"] img');
+    assert.ok(await page.$('[role="dialog"]'), "点击图片应保持浏览窗口打开。");
+    if (index % 3 === 0) await page.keyboard.press("Escape");
+    if (index % 3 === 1) await page.click('button[aria-label="关闭图片浏览"]');
+    if (index % 3 === 2) await page.mouse.click(8, 8);
+    await page.waitForSelector('[role="dialog"]', { hidden: true });
+    await page.waitForFunction(() => getComputedStyle(document.body).overflow !== "hidden");
+    await page.waitForFunction((element) => document.activeElement === element, {}, trigger);
+    const restoredScrollY = await page.evaluate(() => window.scrollY);
+    assert.ok(Math.abs(restoredScrollY - scrollY) < 2, `图片 ${index + 1} 关闭后保留文章阅读位置：${scrollY} → ${restoredScrollY}。`);
+  }
+}
+
+test("真实飞书分栏图片适应宽窄屏并支持图片浏览与键盘操作", { timeout: 120000 }, async () => {
   const runtime = resolve(".debug/article-columns/runtime");
   await mkdir(runtime, { recursive: true });
   const source: FeishuDocument = JSON.parse(await readFile("tests/fixtures/feishu-mcp-columns.json", "utf8"));
@@ -72,6 +132,7 @@ test("真实飞书图片在宽屏和窄屏按列宽与内容顺序展示", { tim
             assert.ok(Math.abs(first.width - second.width) < 1);
           }
         }
+        await verifyImageViewer(page);
       }
     }
     assert.deepEqual(errors, []);

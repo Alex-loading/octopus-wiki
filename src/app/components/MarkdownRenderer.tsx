@@ -12,6 +12,13 @@ import { visit } from "unist-util-visit";
 import { ImageOff } from "lucide-react";
 import { ArticleCodeBlock } from "./ArticleCodeBlock";
 import { ArticleImage } from "./ArticleImage";
+import { ArticleImageViewer } from "./ArticleImageViewer";
+
+declare module "hast" {
+  interface ElementData {
+    articleCodeBlock?: boolean;
+  }
+}
 
 const CALLOUT_CLASS_PATTERN = /^callout$/;
 const CALLOUT_EMOJI_CLASS_PATTERN = /^callout-emoji$/;
@@ -207,20 +214,22 @@ function MarkdownImage({
   }
 
   return (
-    <span className="my-6 block overflow-hidden rounded-xl">
-      <ArticleImage
-        data-article-image="true"
-        src={src}
-        alt={alt ?? ""}
-        title={title}
-        loading="lazy"
-        decoding="async"
-        onError={() => setFailed(true)}
-        className={`mx-auto h-auto max-h-[72vh] max-w-full rounded-xl border object-contain ${dm
-          ? "border-white/10 bg-white/[0.03]"
-          : "border-gray-200 bg-gray-50"
-          }`}
-      />
+    <span className="my-6 block rounded-xl">
+      <ArticleImageViewer src={src} alt={alt} title={title}>
+        <ArticleImage
+          data-article-image="true"
+          src={src}
+          alt={alt ?? ""}
+          title={title}
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+          className={`mx-auto h-auto max-h-[72vh] max-w-full rounded-xl border object-contain ${dm
+            ? "border-white/10 bg-white/[0.03]"
+            : "border-gray-200 bg-gray-50"
+            }`}
+        />
+      </ArticleImageViewer>
     </span>
   );
 }
