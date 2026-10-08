@@ -1,0 +1,1632 @@
+{
+  "docToken": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+  "title": "MCP相关知识",
+  "revisionId": "14",
+  "blocks": [
+    {
+      "block_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "block_type": 1,
+      "children": [
+        "SdBwdyu3boaNoWxpmlOcqZkznsh",
+        "Nn3LdJx6PoAqEfxja4Rc9LVSnug",
+        "Wyc0dHz63oiLMixgAxzcV0zHnbf",
+        "Fop1dYN8loLyvUxL40jcqEsSnKg",
+        "UjxBdjzKmoXezQxFvWIct0NdnIe",
+        "Jwl1dOuYPoaHbzxZXJVcioQhnag",
+        "Ev6BdvtQToGi00xonmdcJu3bnQf",
+        "HhJgdLG0co2BGHxcrw7cuI1fnEd",
+        "WyCqdngGJokYXbxOyeCc8fixn3e",
+        "NCzUdxhrZocNTVxj5vRc0MtMnHU",
+        "JF6OdcNWZoZuo2xBVz1cClw6ngf",
+        "GNQbdcCiZoFwWbxK2IQcUy8Tnvc",
+        "V3vCdshNuoD1ZRxXxuFcZSWWnsc",
+        "QrCadSxAiom2u5xtNH4c41lPnmd",
+        "QlDbdY0XxoYIRsxCFWfcierdnBd",
+        "EQb8dnsk8oUjm3xD9RIc4k7wnBe",
+        "VZQxd3JeEoSnTGxDPxic46fjntf",
+        "T8eSdwRR1otUoSx0GUGcGMdfn6c",
+        "ZiFdd6BMFo8qzFxh1QEc7TqynNd",
+        "UNU5dzPSQo9hKUxqDF5ckwi6nPL",
+        "WKUJd4Zpmo5ZfkxyMdscrRNDnjh",
+        "Yk4QdETu4o5EToxzGAZcoGxbnVe",
+        "UqBndCtKYoJ0qSxoZbaczEsJntf",
+        "CCEAdefj2oy9HExJPZxcSWRHnib",
+        "KgyodnW01o6fBPxIPqRc9DYsnEc",
+        "JQUrd5czvoZws6xxXFPcjqrJntf",
+        "YakndGFk4ouKkHxz7g4cXRTZnMh",
+        "DSscdS1evo1aREx6u2hcCiConng",
+        "JSygdXZQIohm7LxYx1WcqGWXnrf",
+        "Db26d5WXXospgMxvATEcU5VLnZb",
+        "RDiydXu4Nomw51xNjgKcUPtNnOb",
+        "E36ydcuXEoTwuzxnIQpci4LHnLd",
+        "LJjTdm1HeouQQxxmw8acHMOQnne",
+        "VcBGdbkICoYPFMxq5qpcgIkEnsf",
+        "Unw0dLlEVoP753xpApKcvCdonAd",
+        "IalpdzQiroqj1XxtPnUctXkfnJc",
+        "HMv7drXMcocayIxCKwgcFfSZnDd",
+        "BSKndTiIQoKRPfxYQYRccCEDnSh",
+        "O9gQdkek8o5cdYxjdsjcPPNanUh",
+        "O5xLdE6XkosJz8xz8V2ctObIn8b",
+        "QyQFdl20XoeFD5xTY9dciZ7knQb",
+        "ButZdKsEFozEqwxX6o6ckH11nnh"
+      ],
+      "page": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "MCP相关知识",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1
+        }
+      },
+      "parent_id": ""
+    },
+    {
+      "block_id": "SdBwdyu3boaNoWxpmlOcqZkznsh",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "参考文档：",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "Nn3LdJx6PoAqEfxja4Rc9LVSnug",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "https://modelcontextprotocol.io/docs/getting-started/intro",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "Wyc0dHz63oiLMixgAxzcV0zHnbf",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "https://developer.aliyun.com/article/1665090",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "Fop1dYN8loLyvUxL40jcqEsSnKg",
+      "block_type": 3,
+      "heading1": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "概述",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "UjxBdjzKmoXezQxFvWIct0NdnIe",
+      "block_type": 5,
+      "heading3": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "概念",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "Jwl1dOuYPoaHbzxZXJVcioQhnag",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "MCP（Model Context Protocol，模型上下文协议）是一种开放协议，通过标准化应用向大语言模型提供上下文的方式，让AI模型可以安全地与本地和远程资源进行交互。其核心目标是打破数据孤岛，简化AI模型与外部资源的动态互补，从而提升Agent的实用性和智能化水平。",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "Ev6BdvtQToGi00xonmdcJu3bnQf",
+      "block_type": 5,
+      "heading3": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "相关概念",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "HhJgdLG0co2BGHxcrw7cuI1fnEd",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "RAG（Retrieval Augmented Generation，检索增强生成）",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "WyCqdngGJokYXbxOyeCc8fixn3e",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "不需要训练和微调大模型，只需要提供和用户提问相关的额外的信息到提示词中，从而可以获得更高质量的回答",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "NCzUdxhrZocNTVxj5vRc0MtMnHU",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "通常将资料通过嵌入模型生成服务转化为向量，然后存储到向量数据库中。当用户提问时，将用户的问题向量化从向量数据库中进行相似度匹配出 TOP N 个片段，拼接成新的提示词发送给大模型，大模型就可以结合你的资料更好地回答问题了。",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "JF6OdcNWZoZuo2xBVz1cClw6ngf",
+      "block_type": 27,
+      "image": {
+        "align": 2,
+        "height": 609,
+        "scale": 1,
+        "token": "UZ9xb9V4qozdONxlwK5cnpxnnfs",
+        "width": 1456
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "GNQbdcCiZoFwWbxK2IQcUy8Tnvc",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "Function Call（函数调用）",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "V3vCdshNuoD1ZRxXxuFcZSWWnsc",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "是一种允许大型语言模型(LLM)根据用户输入识别它需要的工具并决定何时调用该工具的机制。",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "QrCadSxAiom2u5xtNH4c41lPnmd",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "基本工作原理如下：LLM 接收用户的提示词，LLM 决定它需要的工具，执行方法调用，后端服务执行实际的请求给出处理结果，大语言模型根据处理结果生成最终给用户的回答。",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "QlDbdY0XxoYIRsxCFWfcierdnBd",
+      "block_type": 27,
+      "image": {
+        "align": 2,
+        "height": 266,
+        "scale": 1,
+        "token": "WI6tbjW5boHYRgxsymCcGoZpnnc",
+        "width": 640
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "EQb8dnsk8oUjm3xD9RIc4k7wnBe",
+      "block_type": 5,
+      "heading3": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "架构",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "VZQxd3JeEoSnTGxDPxic46fjntf",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "主机（代表任何提供 AI 交互环境的应用程序）与一个或多个MCP服务器建立连接（主机为每个MCP服务器创建一个MCP客户端）",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "T8eSdwRR1otUoSx0GUGcGMdfn6c",
+      "block_type": 24,
+      "children": [
+        "KGBPdcQTooczY6xGqVacEq7vnfb",
+        "MnDedOoWioCkjqxnqfhcAtI9nkc"
+      ],
+      "grid": {
+        "column_size": 2
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "KGBPdcQTooczY6xGqVacEq7vnfb",
+      "block_type": 25,
+      "children": [
+        "Yzc0dBOEzomViexFMcxcF1SOnqj"
+      ],
+      "grid_column": {
+        "width_ratio": 62
+      },
+      "parent_id": "T8eSdwRR1otUoSx0GUGcGMdfn6c"
+    },
+    {
+      "block_id": "Yzc0dBOEzomViexFMcxcF1SOnqj",
+      "block_type": 27,
+      "image": {
+        "align": 2,
+        "height": 315,
+        "scale": 1.0055096418732783,
+        "token": "OEIxbezCAoTQ0OxsULWcQfNPn0g",
+        "width": 726
+      },
+      "parent_id": "KGBPdcQTooczY6xGqVacEq7vnfb"
+    },
+    {
+      "block_id": "MnDedOoWioCkjqxnqfhcAtI9nkc",
+      "block_type": 25,
+      "children": [
+        "H5ZVdJq4tovb8Sx8D2ucdWcZnAf"
+      ],
+      "grid_column": {
+        "width_ratio": 37
+      },
+      "parent_id": "T8eSdwRR1otUoSx0GUGcGMdfn6c"
+    },
+    {
+      "block_id": "H5ZVdJq4tovb8Sx8D2ucdWcZnAf",
+      "block_type": 27,
+      "image": {
+        "align": 2,
+        "height": 876,
+        "scale": 0.6113902847571189,
+        "token": "KzMOb6z5BojIv8xF3YBcFPrvnrf",
+        "width": 1194
+      },
+      "parent_id": "MnDedOoWioCkjqxnqfhcAtI9nkc"
+    },
+    {
+      "block_id": "ZiFdd6BMFo8qzFxh1QEc7TqynNd",
+      "block_type": 34,
+      "children": [
+        "AqfTdYqw8odrqpx6ywRcOqB6nFe"
+      ],
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "quote_container": {}
+    },
+    {
+      "block_id": "AqfTdYqw8odrqpx6ywRcOqB6nFe",
+      "block_type": 2,
+      "parent_id": "ZiFdd6BMFo8qzFxh1QEc7TqynNd",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "MCP服务器是用于提供上下文数据的程序，可以本地或远程执行",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "UNU5dzPSQo9hKUxqDF5ckwi6nPL",
+      "block_type": 27,
+      "image": {
+        "align": 2,
+        "height": 1272,
+        "scale": 0.3948100092678406,
+        "token": "XKhjbbfbbocY3Ox3EAxcoExqnld",
+        "width": 1079
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "WKUJd4Zpmo5ZfkxyMdscrRNDnjh",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "MCP由数据层和传输层组成，详见：",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "https://modelcontextprotocol.io/docs/learn/architecture#layers",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "Yk4QdETu4o5EToxzGAZcoGxbnVe",
+      "block_type": 5,
+      "heading3": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "原语",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "UqBndCtKYoJ0qSxoZbaczEsJntf",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "Primitives（原语）定义了可以和AI应用程序共享的上下文信息类型和可以执行的操作范围。",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "CCEAdefj2oy9HExJPZxcSWRHnib",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "MCP定义了",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "服务器可以公开的三个核心原语",
+              "text_element_style": {
+                "bold": true,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "：",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "KgyodnW01o6fBPxIPqRc9DYsnEc",
+      "block_type": 13,
+      "ordered": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "资源：MCP服务器想要向客户端提供的上下文信息源数据（例如文件内容、数据库记录、API响应等）",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false,
+          "sequence": "1"
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "JQUrd5czvoZws6xxXFPcjqrJntf",
+      "block_type": 13,
+      "ordered": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "提示：预定义的模板，用于帮助构建与大语言模型的交互",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false,
+          "sequence": "auto"
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "YakndGFk4ouKkHxz7g4cXRTZnMh",
+      "block_type": 13,
+      "ordered": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "工具：允许服务器公开供客户端调用并由AI应用程序执行的可执行函数",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false,
+          "sequence": "auto"
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "DSscdS1evo1aREx6u2hcCiConng",
+      "block_type": 34,
+      "children": [
+        "TBdFdbOhcoloFmxVDntcmclBnHc"
+      ],
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "quote_container": {}
+    },
+    {
+      "block_id": "TBdFdbOhcoloFmxVDntcmclBnHc",
+      "block_type": 2,
+      "parent_id": "DSscdS1evo1aREx6u2hcCiConng",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "假设有一个MCP服务器，他提供数据库的上下文信息。他可以提供用于查询数据库的",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "工具",
+              "text_element_style": {
+                "bold": true,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "、包括数据库模式的",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "资源",
+              "text_element_style": {
+                "bold": true,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "，以及包含与这些工具交互的少量示例的",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "提示",
+              "text_element_style": {
+                "bold": true,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "。",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "JSygdXZQIohm7LxYx1WcqGWXnrf",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "每个原语类型都与相关方法关联，例如发现（",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "*/list",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": true,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "），检索（",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "*/get",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": true,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "），执行（",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "tools/call",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": true,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "）。MCP客户端会使用",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "*/list",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": true,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "发现可用原语，例如使用",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "tools/list",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": true,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "获取所有可用的工具。",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "更多服务器公开原语",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "link": {
+                  "url": "https%3A%2F%2Fmodelcontextprotocol.io%2Fdocs%2Flearn%2Fserver-concepts"
+                },
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "。",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "Db26d5WXXospgMxvATEcU5VLnZb",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "MCP还定义了",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "客户端可以公开的原语",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "link": {
+                  "url": "https%3A%2F%2Fmodelcontextprotocol.io%2Fdocs%2Flearn%2Fclient-concepts"
+                },
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "：",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "RDiydXu4Nomw51xNjgKcUPtNnOb",
+      "block_type": 13,
+      "children": [
+        "BwzPdsMnaokoNvx34jicUxlPnCc"
+      ],
+      "ordered": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "采样：允许服务器向客户端的AI应用程序请求完成某个行为，从而实现代理。让服务器在没有集成AI模型的情况下可以执行依赖于AI的任务",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false,
+          "sequence": "1"
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "BwzPdsMnaokoNvx34jicUxlPnCc",
+      "block_type": 24,
+      "children": [
+        "VnYOdGFmzod8mpx8cJmc3GVXnOe",
+        "CShXdNB6ioHVPNxp1bMciLMFnoc"
+      ],
+      "grid": {
+        "column_size": 2
+      },
+      "parent_id": "RDiydXu4Nomw51xNjgKcUPtNnOb"
+    },
+    {
+      "block_id": "VnYOdGFmzod8mpx8cJmc3GVXnOe",
+      "block_type": 25,
+      "children": [
+        "WPMAdITHLovzzAxqn8xckfFCnWF"
+      ],
+      "grid_column": {
+        "width_ratio": 50
+      },
+      "parent_id": "BwzPdsMnaokoNvx34jicUxlPnCc"
+    },
+    {
+      "block_id": "WPMAdITHLovzzAxqn8xckfFCnWF",
+      "block_type": 27,
+      "image": {
+        "align": 2,
+        "height": 592,
+        "scale": 1,
+        "token": "Sk39bCbi6oMy3txvIZacYiG2nHg",
+        "width": 731
+      },
+      "parent_id": "VnYOdGFmzod8mpx8cJmc3GVXnOe"
+    },
+    {
+      "block_id": "CShXdNB6ioHVPNxp1bMciLMFnoc",
+      "block_type": 25,
+      "children": [
+        "VAtKdc9bXo7TegxyenBcLxrenYd",
+        "F93PdfLEGoXzoGxwbrrcFNsmnwK",
+        "JCaxdmxjKo6AN0xSL8Zc9qHYnyg",
+        "B12idZsp1orblZx0USvcUu0DnL7",
+        "K1i0d1TraoCyjixTFFqcidGPnrf",
+        "T6lrdOR5goLL1sxiZHBcC2een1Y"
+      ],
+      "grid_column": {
+        "width_ratio": 50
+      },
+      "parent_id": "BwzPdsMnaokoNvx34jicUxlPnCc"
+    },
+    {
+      "block_id": "VAtKdc9bXo7TegxyenBcLxrenYd",
+      "block_type": 13,
+      "ordered": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "sampling/createMessage",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": true,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          },
+          {
+            "text_run": {
+              "content": "服务器向客户端发送请求",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false,
+          "sequence": "1"
+        }
+      },
+      "parent_id": "CShXdNB6ioHVPNxp1bMciLMFnoc"
+    },
+    {
+      "block_id": "F93PdfLEGoXzoGxwbrrcFNsmnwK",
+      "block_type": 13,
+      "ordered": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "客户端审核请求并可以修改",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false,
+          "sequence": "auto"
+        }
+      },
+      "parent_id": "CShXdNB6ioHVPNxp1bMciLMFnoc"
+    },
+    {
+      "block_id": "JCaxdmxjKo6AN0xSL8Zc9qHYnyg",
+      "block_type": 13,
+      "ordered": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "来自LLM的客户样本",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false,
+          "sequence": "auto"
+        }
+      },
+      "parent_id": "CShXdNB6ioHVPNxp1bMciLMFnoc"
+    },
+    {
+      "block_id": "B12idZsp1orblZx0USvcUu0DnL7",
+      "block_type": 13,
+      "ordered": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "客户检查完成情况",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false,
+          "sequence": "auto"
+        }
+      },
+      "parent_id": "CShXdNB6ioHVPNxp1bMciLMFnoc"
+    },
+    {
+      "block_id": "K1i0d1TraoCyjixTFFqcidGPnrf",
+      "block_type": 13,
+      "ordered": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "客户端将结果返回给服务器",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false,
+          "sequence": "auto"
+        }
+      },
+      "parent_id": "CShXdNB6ioHVPNxp1bMciLMFnoc"
+    },
+    {
+      "block_id": "T6lrdOR5goLL1sxiZHBcC2een1Y",
+      "block_type": 2,
+      "parent_id": "CShXdNB6ioHVPNxp1bMciLMFnoc",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "E36ydcuXEoTwuzxnIQpci4LHnLd",
+      "block_type": 5,
+      "heading3": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "交互实例",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "LJjTdm1HeouQQxxmw8acHMOQnne",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "https://modelcontextprotocol.io/docs/learn/architecture#example",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "VcBGdbkICoYPFMxq5qpcgIkEnsf",
+      "block_type": 27,
+      "image": {
+        "align": 2,
+        "height": 369,
+        "scale": 1,
+        "token": "EhufbEXBvoeNRxx088hc0LPxnyf",
+        "width": 640
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "Unw0dLlEVoP753xpApKcvCdonAd",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "首先需要在主机上自动或手动配置 MCP 服务，当用户输入问题时， MCP 客户端让 大语言模型选择 MCP 工具，大模型选择好 MCP 工具以后， MCP 客户端寻求用户同意（很多产品支持配置自动同意），MCP 客户端请求 MCP 服务器， MCP 服务调用工具并将工具的结果返回给 MCP 客户端， MCP 客户端将模型调用结果和用户的查询发送给大语言模型，大语言模型组织答案给用户。",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "IalpdzQiroqj1XxtPnUctXkfnJc",
+      "block_type": 2,
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e",
+      "text": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      }
+    },
+    {
+      "block_id": "HMv7drXMcocayIxCKwgcFfSZnDd",
+      "block_type": 3,
+      "heading1": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "MCP服务聚合站点",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "BSKndTiIQoKRPfxYQYRccCEDnSh",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "https://modelscope.cn/mcp",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "O9gQdkek8o5cdYxjdsjcPPNanUh",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "https://mcpmarket.cn",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "O5xLdE6XkosJz8xz8V2ctObIn8b",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "https://glama.ai/mcp/servers",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "QyQFdl20XoeFD5xTY9dciZ7knQb",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "https://mcp.so",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    },
+    {
+      "block_id": "ButZdKsEFozEqwxX6o6ckH11nnh",
+      "block_type": 12,
+      "bullet": {
+        "elements": [
+          {
+            "text_run": {
+              "content": "https://github.com/punkpeye/awesome-mcp-servers/blob/main/README-zh.md",
+              "text_element_style": {
+                "bold": false,
+                "inline_code": false,
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              }
+            }
+          }
+        ],
+        "style": {
+          "align": 1,
+          "folded": false
+        }
+      },
+      "parent_id": "P9IYdJ3WZo1zxMxFv7NcvITUn8e"
+    }
+  ],
+  "rawContent": "MCP相关知识\n参考文档：\nhttps://modelcontextprotocol.io/docs/getting-started/intro\nhttps://developer.aliyun.com/article/1665090\n概述\n概念\nMCP（Model Context Protocol，模型上下文协议）是一种开放协议，通过标准化应用向大语言模型提供上下文的方式，让AI模型可以安全地与本地和远程资源进行交互。其核心目标是打破数据孤岛，简化AI模型与外部资源的动态互补，从而提升Agent的实用性和智能化水平。\n相关概念\nRAG（Retrieval Augmented Generation，检索增强生成）\n不需要训练和微调大模型，只需要提供和用户提问相关的额外的信息到提示词中，从而可以获得更高质量的回答\n通常将资料通过嵌入模型生成服务转化为向量，然后存储到向量数据库中。当用户提问时，将用户的问题向量化从向量数据库中进行相似度匹配出 TOP N 个片段，拼接成新的提示词发送给大模型，大模型就可以结合你的资料更好地回答问题了。\nimage.png\n\nFunction Call（函数调用）\n是一种允许大型语言模型(LLM)根据用户输入识别它需要的工具并决定何时调用该工具的机制。\n基本工作原理如下：LLM 接收用户的提示词，LLM 决定它需要的工具，执行方法调用，后端服务执行实际的请求给出处理结果，大语言模型根据处理结果生成最终给用户的回答。\nimage.png\n\n架构\n主机（代表任何提供 AI 交互环境的应用程序）与一个或多个MCP服务器建立连接（主机为每个MCP服务器创建一个MCP客户端）\n\n\nimage.png\n\n\nimage.png\n\n\nMCP服务器是用于提供上下文数据的程序，可以本地或远程执行\nimage.png\n\nMCP由数据层和传输层组成，详见：https://modelcontextprotocol.io/docs/learn/architecture#layers\n原语\nPrimitives（原语）定义了可以和AI应用程序共享的上下文信息类型和可以执行的操作范围。\nMCP定义了服务器可以公开的三个核心原语：\n资源：MCP服务器想要向客户端提供的上下文信息源数据（例如文件内容、数据库记录、API响应等）\n提示：预定义的模板，用于帮助构建与大语言模型的交互\n工具：允许服务器公开供客户端调用并由AI应用程序执行的可执行函数\n\n假设有一个MCP服务器，他提供数据库的上下文信息。他可以提供用于查询数据库的工具、包括数据库模式的资源，以及包含与这些工具交互的少量示例的提示。\n每个原语类型都与相关方法关联，例如发现（*/list），检索（*/get），执行（tools/call）。MCP客户端会使用*/list发现可用原语，例如使用tools/list获取所有可用的工具。更多服务器公开原语。\nMCP还定义了客户端可以公开的原语：\n采样：允许服务器向客户端的AI应用程序请求完成某个行为，从而实现代理。让服务器在没有集成AI模型的情况下可以执行依赖于AI的任务\n\n\nimage.png\n\n\nsampling/createMessage服务器向客户端发送请求\n客户端审核请求并可以修改\n来自LLM的客户样本\n客户检查完成情况\n客户端将结果返回给服务器\n\n交互实例\nhttps://modelcontextprotocol.io/docs/learn/architecture#example\nimage.png\n\n首先需要在主机上自动或手动配置 MCP 服务，当用户输入问题时， MCP 客户端让 大语言模型选择 MCP 工具，大模型选择好 MCP 工具以后， MCP 客户端寻求用户同意（很多产品支持配置自动同意），MCP 客户端请求 MCP 服务器， MCP 服务调用工具并将工具的结果返回给 MCP 客户端， MCP 客户端将模型调用结果和用户的查询发送给大语言模型，大语言模型组织答案给用户。\n\nMCP服务聚合站点\nhttps://modelscope.cn/mcp\nhttps://mcpmarket.cn\nhttps://glama.ai/mcp/servers\nhttps://mcp.so\nhttps://github.com/punkpeye/awesome-mcp-servers/blob/main/README-zh.md\n"
+}

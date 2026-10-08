@@ -6,7 +6,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import rehypeSlug from "rehype-slug";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import type { Root as HastRoot } from "hast";
+import type { Element as HastElement, Root as HastRoot } from "hast";
 import type { Root as MdastRoot } from "mdast";
 import { visit } from "unist-util-visit";
 import { ImageOff } from "lucide-react";
@@ -93,6 +93,8 @@ const markdownSanitizeSchema = {
     span: [...(defaultSchema.attributes?.span ?? []), "className"],
     div: [
       ...(defaultSchema.attributes?.div ?? []),
+      "dataFeishuGrid",
+      "dataFeishuWidth",
       [
         "className",
         CALLOUT_CLASS_PATTERN,
@@ -135,6 +137,22 @@ function rehypeArticleCodeBlocks() {
       }
     });
   };
+}
+
+function feishuColumnWidth(node: HastElement): number {
+  const width = Number(node.properties.dataFeishuWidth);
+  if (!Number.isFinite(width) || width <= 0 || width > 100) throw new Error("飞书分栏宽度必须位于 0 到 100 之间。");
+  return width;
+}
+
+function feishuGridColumns(node: HastElement): string {
+  const count = Number(node.properties.dataFeishuGrid);
+  const columns = node.children.filter((child): child is HastElement => child.type === "element");
+  if (!Number.isInteger(count) || count < 1 || count !== columns.length ||
+      columns.some((column) => column.tagName !== "div")) {
+    throw new Error("飞书分栏的列数与内容不一致。");
+  }
+  return columns.map((column) => `minmax(0, ${feishuColumnWidth(column)}fr)`).join(" ");
 }
 
 function classColorIndex(className: string | undefined, prefix: string): number | null {
@@ -296,7 +314,32 @@ export function MarkdownRenderer({
         </a>
       );
     },
-    div: ({ className, children, ...props }) => {
+    div: ({ node, className, children, ...props }) => {
+      if (node?.properties.dataFeishuGrid !== undefined) {
+        return (
+          <div className="@container/feishu my-6">
+            <div
+              data-feishu-grid={Number(node.properties.dataFeishuGrid)}
+              style={{ "--feishu-grid-columns": feishuGridColumns(node) } as CSSProperties}
+              className="grid grid-cols-1 items-start gap-4 @min-[36rem]/feishu:grid-cols-[var(--feishu-grid-columns)]"
+            >
+              {children}
+            </div>
+          </div>
+        );
+      }
+
+      if (node?.properties.dataFeishuWidth !== undefined) {
+        return (
+          <div
+            data-feishu-width={feishuColumnWidth(node)}
+            className="min-w-0 [overflow-wrap:anywhere] [&>:first-child]:mt-0 [&>:last-child]:mb-0"
+          >
+            {children}
+          </div>
+        );
+      }
+
       const classNames = className?.split(/\s+/) ?? [];
 
       if (classNames.includes("callout-emoji")) {

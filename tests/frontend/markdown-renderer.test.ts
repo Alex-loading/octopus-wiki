@@ -79,6 +79,40 @@ test("renders Markdown images as responsive lazy-loaded article media", async ()
   assert.match(html, /max-w-full/);
 });
 
+test("真实飞书分栏在两种主题下显示全部图片并保留混合内容和列宽", async () => {
+  const MarkdownRenderer = await loadMarkdownRenderer();
+  const source: FeishuDocument = JSON.parse(
+    readFileSync(new URL("../fixtures/feishu-mcp-columns.json", import.meta.url), "utf8"),
+  );
+  const { markdown: content } = convertFeishuDocumentToMarkdown(source, "signing-secret");
+  const orderedBlocks = source.blocks.filter((block) => block.parent_id === "CShXdNB6ioHVPNxp1bMciLMFnoc" && block.block_type === 13);
+  const expectedList = orderedBlocks.map((block) => {
+    const ordered = block.ordered as { elements: { text_run: { content: string } }[] };
+    return ordered.elements.map((element) => element.text_run.content).join("");
+  });
+
+  for (const dm of [false, true]) {
+    const document = new JSDOM(renderToStaticMarkup(
+      createElement(MarkdownRenderer, { content, dm }),
+    )).window.document;
+    const grids = [...document.querySelectorAll<HTMLElement>("[data-feishu-grid]")];
+
+    assert.equal(grids.length, 2);
+    assert.equal(grids[0].style.getPropertyValue("--feishu-grid-columns"), "minmax(0, 62fr) minmax(0, 37fr)");
+    assert.equal(grids[1].style.getPropertyValue("--feishu-grid-columns"), "minmax(0, 50fr) minmax(0, 50fr)");
+    assert.equal(grids[0].children.length, 2);
+    assert.equal(grids[0].querySelectorAll("img[data-article-image]").length, 2);
+    assert.equal(grids[1].children[0].querySelectorAll("img[data-article-image]").length, 1);
+    assert.deepEqual([...grids[1].children[1].querySelectorAll("ol > li")].map((element) => element.textContent?.trim()), expectedList);
+    assert.equal(grids[1].children[1].querySelector("code")?.textContent, "sampling/createMessage");
+    assert.doesNotMatch(document.body.textContent ?? "", /!\[飞书图片\]\(/);
+    for (const image of document.querySelectorAll("[data-feishu-grid] img")) {
+      assert.equal(image.getAttribute("loading"), "lazy");
+      assert.equal(image.closest("picture")?.querySelector("source")?.getAttribute("type"), "image/webp");
+    }
+  }
+});
+
 test("飞书文章中的嵌套代码完整显示并保留后续列表", async () => {
   const MarkdownRenderer = await loadMarkdownRenderer();
   const source: FeishuDocument = JSON.parse(

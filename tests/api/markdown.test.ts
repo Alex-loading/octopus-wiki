@@ -15,6 +15,31 @@ const captionDocument: FeishuDocument = JSON.parse(
   readFileSync(new URL("../fixtures/feishu-langchain-code-caption.json", import.meta.url), "utf8"),
 );
 
+const columnsDocument: FeishuDocument = JSON.parse(
+  readFileSync(new URL("../fixtures/feishu-mcp-columns.json", import.meta.url), "utf8"),
+);
+
+test("真实飞书分栏保留列宽比例、图片和列表内容", () => {
+  const { markdown } = convertFeishuDocumentToMarkdown(columnsDocument, "signing-secret");
+  const renderer = new MarkdownRenderer({});
+  const document = new JSDOM(renderer.markdownToHTML(markdown)).window.document;
+  const grids = [...document.querySelectorAll("[data-feishu-grid]")];
+
+  assert.equal(grids.length, 2);
+  assert.deepEqual([...grids[0].children].map((column) => column.getAttribute("data-feishu-width")), ["62", "37"]);
+  assert.equal(grids[0].querySelectorAll("img").length, 2);
+  assert.equal(grids[1].querySelectorAll("img").length, 1);
+  assert.equal(grids[1].children[1].querySelectorAll("ol > li").length, 5);
+  assert.doesNotMatch(document.body.textContent ?? "", /!\[飞书图片\]\(/);
+
+  for (const image of document.querySelectorAll("[data-feishu-grid] img")) {
+    const url = new URL(image.getAttribute("src")!, "https://article.test");
+    assert.equal(url.pathname, "/api/feishu-media");
+    assert.equal(url.searchParams.get("type"), "image");
+    assert.match(url.searchParams.get("sig")!, /^[a-f0-9]{64}$/);
+  }
+});
+
 test("通过飞书纯文本读取代码说明，同时完整保留代码正文", () => {
   const { markdown } = convertFeishuDocumentToMarkdown(captionDocument, "signing-secret");
   assert.match(markdown, /```py feishu-caption="接受初始化的模型实例"/);
@@ -137,7 +162,10 @@ test("renders Feishu blocks and rewrites media tokens to signed proxy URLs", () 
   assert.match(result.markdown, /^# Demo document/m);
   assert.match(result.markdown, /^## Section/m);
   assert.match(result.markdown, /<b>Bold<\/b> text/);
-  assert.match(result.markdown, /!\[飞书图片\]\(\/api\/feishu-media\?token=image-token&type=image&sig=[a-f0-9]{64}\)/);
+  const renderer = new MarkdownRenderer({});
+  const document = new JSDOM(renderer.markdownToHTML(result.markdown)).window.document;
+  assert.equal(document.querySelector("img")?.getAttribute("alt"), "飞书图片");
+  assert.match(document.querySelector("img")?.getAttribute("src") ?? "", /^\/api\/feishu-media\?token=image-token&type=image&sig=[a-f0-9]{64}$/);
   assert.match(result.markdown, /\[attachment\.pdf\]\(\/api\/feishu-media\?token=file-token&type=file&sig=[a-f0-9]{64}\)/);
   assert.match(result.markdown, /暂不支持的飞书内容块：18/);
   assert.match(
