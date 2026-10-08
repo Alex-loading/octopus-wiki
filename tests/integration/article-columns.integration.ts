@@ -8,6 +8,7 @@ import { convertFeishuDocumentToMarkdown } from "../../api/_lib/markdown.ts";
 import type { FeishuDocument } from "../../api/_lib/feishu.ts";
 
 async function verifyImageViewer(page: Page) {
+  const mobile = Boolean(page.viewport()?.hasTouch);
   const triggers = await page.$$("[data-article-image-trigger]");
   const images = await page.$$("img[data-article-image]");
   assert.equal(triggers.length, images.length, "每张正文图片都可以打开浏览窗口。");
@@ -19,13 +20,14 @@ async function verifyImageViewer(page: Page) {
       await (image as HTMLImageElement).decode();
     });
     await trigger.scrollIntoView();
-    await trigger.focus();
+    if (!mobile) await trigger.focus();
     const source = await trigger.$eval("img", (image) => image.getAttribute("src"));
     const scrollY = await page.evaluate(() => window.scrollY);
-    if (index % 3 === 0) await trigger.click();
-    if (index % 3 === 1) await page.keyboard.press("Enter");
-    if (index % 3 === 2) await page.keyboard.press("Space");
+    if (mobile) await trigger.tap();
+    else if (index % 3 === 0) await trigger.click();
+    else await page.keyboard.press(index % 3 === 1 ? "Enter" : "Space");
     await page.waitForSelector('[role="dialog"]', { visible: true });
+    await page.waitForFunction(() => document.querySelector('[role="dialog"]')?.contains(document.activeElement));
 
     const preview = await page.$eval('[role="dialog"] img', async (element) => {
       const image = element as HTMLImageElement;
@@ -37,7 +39,11 @@ async function verifyImageViewer(page: Page) {
         src: image.getAttribute("src"),
         width: image.naturalWidth,
         height: image.naturalHeight,
-        contained: bounds.left >= 0 && bounds.top >= 0 && bounds.right <= innerWidth && bounds.bottom <= innerHeight,
+        contained: bounds.left >= 0 && bounds.top >= 0 && bounds.right <= document.documentElement.clientWidth && bounds.bottom <= document.documentElement.clientHeight,
+        closeVisible: (() => {
+          const close = dialog.querySelector('button[aria-label="关闭图片浏览"]')!.getBoundingClientRect();
+          return close.left >= 0 && close.top >= 0 && close.right <= document.documentElement.clientWidth && close.bottom <= document.documentElement.clientHeight;
+        })(),
         scrollLocked: getComputedStyle(document.body).overflow === "hidden",
         focused: dialog.contains(document.activeElement),
         title: title?.textContent,
@@ -46,6 +52,7 @@ async function verifyImageViewer(page: Page) {
     assert.equal(preview.src, source, "浏览窗口应显示当前点击的图片。");
     assert.ok(preview.width > 0 && preview.height > 0);
     assert.ok(preview.contained, "图片应完整显示在当前屏幕内。");
+    assert.ok(preview.closeVisible, "关闭按钮应完整显示在当前屏幕内。");
     assert.ok(preview.scrollLocked);
     assert.ok(preview.focused);
     assert.ok(preview.title);
@@ -54,11 +61,16 @@ async function verifyImageViewer(page: Page) {
     await page.keyboard.press("Tab");
     assert.ok(await page.$eval('[role="dialog"]', (dialog) => dialog.contains(document.activeElement)));
 
-    await page.click('[role="dialog"] img');
+    if (!mobile) await page.click('[role="dialog"] img');
     assert.ok(await page.$('[role="dialog"]'), "点击图片应保持浏览窗口打开。");
-    if (index % 3 === 0) await page.keyboard.press("Escape");
-    if (index % 3 === 1) await page.click('button[aria-label="关闭图片浏览"]');
-    if (index % 3 === 2) await page.mouse.click(8, 8);
+    if (mobile) {
+      if (index % 2 === 0) await page.tap('button[aria-label="关闭图片浏览"]');
+      else await page.touchscreen.tap(8, 8);
+    } else {
+      if (index % 3 === 0) await page.keyboard.press("Escape");
+      if (index % 3 === 1) await page.click('button[aria-label="关闭图片浏览"]');
+      if (index % 3 === 2) await page.mouse.click(8, 8);
+    }
     await page.waitForSelector('[role="dialog"]', { hidden: true });
     await page.waitForFunction(() => getComputedStyle(document.body).overflow !== "hidden");
     await page.waitForFunction((element) => document.activeElement === element, {}, trigger);
@@ -110,6 +122,7 @@ test("真实飞书分栏图片适应宽窄屏并支持图片浏览与键盘操�
 
       for (const width of [1280, 390]) {
         await page.setViewport({ width, height: 900 });
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), "正文内容应在屏幕宽度内换行。");
         const grids = await page.$$eval("[data-feishu-grid]", (elements) => elements.map((grid) => ({
           width: grid.clientWidth,
           scrollWidth: grid.scrollWidth,
@@ -134,6 +147,12 @@ test("真实飞书分栏图片适应宽窄屏并支持图片浏览与键盘操�
         }
         await verifyImageViewer(page);
       }
+
+      await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+      await page.goto(`http://127.0.0.1:${address.port}/tests/integration/browser/article-columns.html?theme=${theme}`, { waitUntil: "networkidle0" });
+      await page.waitForSelector("[data-article-image-trigger]");
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), "手机页面应保持屏幕宽度。");
+      await verifyImageViewer(page);
     }
     assert.deepEqual(errors, []);
   } finally {

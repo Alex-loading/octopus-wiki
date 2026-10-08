@@ -481,7 +481,7 @@ export function MarkdownRenderer({
   }), [dm]);
 
   return (
-    <div className="text-base">
+    <div className="min-w-0 text-base [overflow-wrap:anywhere]">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkFeishuCodeCaptions]}
         rehypePlugins={[
