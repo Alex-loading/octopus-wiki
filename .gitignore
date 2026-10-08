@@ -21,3 +21,4 @@ pnpm-debug.log*
 
 # 本地诊断数据
 .debug/
+.local/bookmark-reader/

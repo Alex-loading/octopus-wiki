@@ -1,5 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { BookmarkSaveError } from "./_lib/bookmark-save.ts";
+import { bookmarkReaderCommand } from "./_lib/bookmark-browser-client.ts";
+import { BookmarkPreviewError, previewErrorBody, type BookmarkReaderCommand } from "../src/app/content/bookmarkPreview.ts";
 import {
   validateBookmarkDraft,
   validateCollectionDraft,
@@ -60,6 +62,7 @@ function draft(value: unknown, strings: string[]) {
 export function createCollectorHandler(dependencies: {
   gateway: () => CollectorGateway;
   preview?: typeof fetchBookmarkPreview;
+  readerCommand?: typeof bookmarkReaderCommand;
   now?: () => number;
 }) {
   return async (request: Request): Promise<Response> => {
@@ -168,7 +171,7 @@ export function createCollectorHandler(dependencies: {
         );
       }
       if (
-        !["create-bookmark", "create-collection", "preview"].includes(
+        !["create-bookmark", "create-collection", "preview", "login-start", "login-check", "login-cancel"].includes(
           String(body.action),
         )
       )
@@ -182,12 +185,15 @@ export function createCollectorHandler(dependencies: {
           401,
         );
       let data: unknown;
-      if (body.action === "preview") {
+      if (["login-start", "login-check", "login-cancel"].includes(String(body.action))) {
+        data = await (dependencies.readerCommand ?? bookmarkReaderCommand)(body as BookmarkReaderCommand, request.signal);
+      } else if (body.action === "preview") {
         if (typeof body.url !== "string" || body.url.length > 4096)
           throw new CollectorError("请提供有效链接。");
         try {
-          data = await (dependencies.preview ?? fetchBookmarkPreview)(body.url);
+          data = await (dependencies.preview ?? fetchBookmarkPreview)(body.url, undefined, undefined, request.signal);
         } catch (error) {
+          if (error instanceof BookmarkPreviewError) throw error;
           throw new CollectorError(
             error instanceof Error
               ? error.message
@@ -226,6 +232,7 @@ export function createCollectorHandler(dependencies: {
       }
       return json({ success: true, data });
     } catch (error) {
+      if (error instanceof BookmarkPreviewError) return json(previewErrorBody(error), error.status);
       return json(
         {
           success: false,

@@ -1,4 +1,6 @@
 import { getSupabaseClient, getUserRoleState } from "./repository";
+import { previewResponseError, type BookmarkMetadata, type BookmarkReaderCommand,
+  type BookmarkLoginSession, type BookmarkLoginResult } from "./bookmarkPreview";
 import {
   validateBookmarkDraft,
   validateCollectionDraft,
@@ -143,9 +145,7 @@ export async function deleteBookmarkCollection(id: string): Promise<void> {
   if (!data?.length)
     throw new Error("收藏箱不存在或没有删除权限，请刷新后重试。");
 }
-export async function previewBookmark(
-  url: string,
-): Promise<{ title: string; cover_url: string }> {
+async function previewRequest<T>(body: { url: string } | BookmarkReaderCommand, signal?: AbortSignal): Promise<T> {
   const db = await adminClient();
   const { data, error } = await db.auth.getSession();
   if (error || !data.session) throw new Error("请先登录管理员账号。");
@@ -155,13 +155,19 @@ export async function previewBookmark(
       "Content-Type": "application/json",
       Authorization: `Bearer ${data.session.access_token}`,
     },
-    body: JSON.stringify({ url }),
-    signal: AbortSignal.timeout(10000),
+    body: JSON.stringify(body),
+    signal: AbortSignal.any([AbortSignal.timeout(60000), ...(signal ? [signal] : [])]),
   });
   const result = await response.json().catch(() => null);
   if (!response.ok || !result?.success)
-    throw new Error(
-      result?.message || "暂时无法读取标题和封面，可以手动填写后保存。",
-    );
+    throw previewResponseError(result, response.status);
   return result.data;
 }
+
+export const previewBookmark = (url: string, signal?: AbortSignal) => previewRequest<BookmarkMetadata>({ url }, signal);
+export const startBookmarkLogin = (url: string, requestId: string, signal?: AbortSignal) =>
+  previewRequest<BookmarkLoginSession>({ action: "login-start", url, requestId }, signal);
+export const checkBookmarkLogin = (sessionId: string, signal?: AbortSignal) =>
+  previewRequest<BookmarkLoginResult>({ action: "login-check", sessionId }, signal);
+export const cancelBookmarkLogin = (sessionId: string) =>
+  previewRequest<void>({ action: "login-cancel", sessionId });

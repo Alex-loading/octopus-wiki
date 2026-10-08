@@ -1,4 +1,5 @@
 import { getSupabaseClient } from "./repository";
+import { previewResponseError, type BookmarkMetadata, type BookmarkLoginSession, type BookmarkLoginResult } from "./bookmarkPreview";
 import {
   validateBookmarkDraft,
   validateCollectionDraft,
@@ -15,6 +16,7 @@ export type CollectorAccess =
 async function request<T>(
   body?: Record<string, unknown>,
   admin = false,
+  signal?: AbortSignal,
 ): Promise<T> {
   const headers: Record<string, string> = {};
   if (body) headers["Content-Type"] = "application/json";
@@ -31,14 +33,12 @@ async function request<T>(
     cache: "no-store",
     headers,
     ...(body ? { body: JSON.stringify(body) } : {}),
-    signal: AbortSignal.timeout(body?.action === "create-bookmark" ? 90000 : 15000),
+    signal: AbortSignal.any([AbortSignal.timeout(body?.action === "create-bookmark" ? 90000 :
+      ["preview", "login-start", "login-check"].includes(String(body?.action)) ? 60000 : 15000), ...(signal ? [signal] : [])]),
   });
   const result = await response.json().catch(() => null);
   if (!response.ok || !result?.success)
-    throw new Error(
-      result?.message ||
-        "免登录收藏服务暂不可用，请确认已部署收藏 API 后重试。",
-    );
+    throw previewResponseError(result, response.status);
   return result.data as T;
 }
 export const getCollectorAccess = () => request<CollectorAccess>();
@@ -61,6 +61,11 @@ export const collectorActions = {
       draft: validateCollectionDraft(draft),
     });
   },
-  preview: (url: string) =>
-    request<{ title: string; cover_url: string }>({ action: "preview", url }),
+  preview: (url: string, signal?: AbortSignal) =>
+    request<BookmarkMetadata>({ action: "preview", url }, false, signal),
+  startLogin: (url: string, requestId: string, signal?: AbortSignal) =>
+    request<BookmarkLoginSession>({ action: "login-start", url, requestId }, false, signal),
+  checkLogin: (sessionId: string, signal?: AbortSignal) =>
+    request<BookmarkLoginResult>({ action: "login-check", sessionId }, false, signal),
+  cancelLogin: (sessionId: string) => request<void>({ action: "login-cancel", sessionId }),
 };

@@ -60,12 +60,14 @@
   API reuses the server-only Supabase variables; unsupported or blocked previews can be filled
   manually. Full content backup and synchronization with platform-native favorites are not included.
 
-  Link previews require Node.js 24 (`nvm use`). Xiaohongshu CDN covers published as HTTP are
-  upgraded to HTTPS. Douyin video pages without metadata in the initial HTML are rendered with
-  an isolated Chromium browser, then read for `lark:url:video_title` and
-  `lark:url:video_cover_image_url`. Vercel bundles Chromium and allows up to 60 seconds for the
-  two preview-capable APIs. For local development, macOS uses the installed Google Chrome;
-  other systems can set `BOOKMARK_CHROME_EXECUTABLE_PATH`. No browser login is required.
+  链接预览需要 Node.js 24（`nvm use`）。各平台共用独立的常驻 Chrome 保存登录状态。
+  本地运行 `npm run bookmarks:reader`；收藏页面遇到登录或验证要求时，点击打开平台页面，
+  完成操作后自动重新读取原链接。线上配置常驻读取服务地址、服务令牌及远程浏览器入口。
+  配置、登录恢复与真实测试见[平台内容读取服务](docs/bookmark-browser-reader.md)。
+
+  抖音视频页面在初始 HTML 缺少信息时，通过常驻 Chrome 读取页面发起的视频详情请求，
+  校验视频 ID 后提取标题和封面。Vercel 收藏预览接口允许最多 60 秒。
+  macOS 使用已安装的 Google Chrome，其他系统配置 `BOOKMARK_CHROME_EXECUTABLE_PATH`。
 
   Enable 90-day device authorization once at `/collect/setup` to collect from new windows
   without repeating administrator login. Saved bookmarklets do not update with website deployments;

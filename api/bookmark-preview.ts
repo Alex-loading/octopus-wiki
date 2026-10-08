@@ -3,10 +3,13 @@ import {
   fetchBookmarkPreview,
   readBoundedText,
 } from "./_lib/bookmark-preview.ts";
+import { bookmarkReaderCommand } from "./_lib/bookmark-browser-client.ts";
+import { BookmarkPreviewError, previewErrorBody, type BookmarkReaderCommand } from "../src/app/content/bookmarkPreview.ts";
 
 export function createBookmarkPreviewHandler(dependencies: {
   isAdmin: (token: string) => Promise<boolean>;
   preview: typeof fetchBookmarkPreview;
+  readerCommand?: typeof bookmarkReaderCommand;
 }) {
   return async (request: Request): Promise<Response> => {
     const json = (body: unknown, status = 200) =>
@@ -22,7 +25,7 @@ export function createBookmarkPreviewHandler(dependencies: {
           { success: false, message: "仅管理员可以读取收藏预览。" },
           403,
         );
-      let body: { url?: unknown };
+      let body: { action?: unknown; url?: unknown; requestId?: unknown; sessionId?: unknown };
       try {
         body = JSON.parse(
           await readBoundedText(new Response(request.body), 12000),
@@ -33,14 +36,20 @@ export function createBookmarkPreviewHandler(dependencies: {
           400,
         );
       }
-      if (typeof body?.url !== "string" || !body.url || body.url.length > 4096)
+      if (body?.action !== undefined && !["preview", "login-start", "login-check", "login-cancel"].includes(String(body.action)))
+        return json({ success: false, message: "请求操作无效。" }, 400);
+      if ((!body?.action || body.action === "preview" || body.action === "login-start") &&
+          (typeof body?.url !== "string" || !body.url || body.url.length > 4096))
         return json({ success: false, message: "请提供有效链接。" }, 400);
       try {
         return json({
           success: true,
-          data: await dependencies.preview(body.url),
+          data: !body.action || body.action === "preview"
+            ? await dependencies.preview(body.url as string, undefined, undefined, request.signal)
+            : await (dependencies.readerCommand ?? bookmarkReaderCommand)(body as BookmarkReaderCommand, request.signal),
         });
       } catch (error) {
+        if (error instanceof BookmarkPreviewError) return json(previewErrorBody(error), error.status);
         return json(
           {
             success: false,

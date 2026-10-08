@@ -14,12 +14,20 @@ import {
   previewBookmark,
   saveBookmark,
   saveBookmarkCollection,
+  startBookmarkLogin,
+  checkBookmarkLogin,
+  cancelBookmarkLogin,
 } from "../content/bookmarkRepository";
+import { useBookmarkPreview } from "../content/useBookmarkPreview";
+import type { BookmarkMetadata } from "../content/bookmarkPreview";
 
 const adminActions = {
   save: saveBookmark,
   createCollection: saveBookmarkCollection,
   preview: previewBookmark,
+  startLogin: startBookmarkLogin,
+  checkLogin: checkBookmarkLogin,
+  cancelLogin: cancelBookmarkLogin,
 };
 
 export function BookmarkForm({
@@ -54,8 +62,18 @@ export function BookmarkForm({
   const live = useRef(true);
   const busy = useRef(false);
   const boxBusy = useRef(false);
+  const sourceVersion = useRef(0);
   // Share targets may provide the app name as a title. Only user edits are final.
   const suggestedTitle = useRef(!bookmarkId);
+  const applyMetadata = (original: string, metadata: BookmarkMetadata) => {
+    if (!live.current) return;
+    setDraft(current => current.url !== original ? current : {
+      ...current,
+      title: metadata.title && suggestedTitle.current ? metadata.title : current.title || metadata.title,
+      cover_url: current.cover_url || metadata.cover_url,
+    });
+  };
+  const previewFlow = useBookmarkPreview(actions, applyMetadata);
   useEffect(() => {
     live.current = true;
     return () => {
@@ -66,19 +84,26 @@ export function BookmarkForm({
   const set = <K extends keyof BookmarkDraft>(
     key: K,
     value: BookmarkDraft[K],
-  ) => setDraft((current) => ({ ...current, [key]: value }));
+  ) => setDraft((current) => ({ ...current, [key]: value,
+    ...(key === "url" && current.url !== value ? { cover_url: "" } : {}),
+  }));
   const changeText = (value: string) => {
+    sourceVersion.current++;
+    previewFlow.cancel();
     setText(value);
     setNotice("");
     const share = parseBookmarkShare(value);
+    const nextUrl = share.urls.length === 1 ? share.urls[0] : "";
     setDraft((current) => ({
       ...current,
-      url: share.urls.length === 1 ? share.urls[0] : "",
+      url: nextUrl,
       title: suggestedTitle.current ? share.title : current.title,
+      cover_url: current.url === nextUrl ? current.cover_url : "",
     }));
   };
   const recognize = async () => {
-    if (previewing) return;
+    if (previewing || previewFlow.recovering) return;
+    const version = sourceVersion.current;
     setPreviewing(true);
     setError("");
     setNotice("");
@@ -91,6 +116,7 @@ export function BookmarkForm({
       } catch {
         clipboardDenied = true;
       }
+      if (!live.current || sourceVersion.current !== version) return;
       const shared = parseBookmarkShare(source);
       const original =
         shared.urls.length === 1
@@ -113,20 +139,9 @@ export function BookmarkForm({
         else setNotice("剪贴板中没有可识别的链接，请先复制文章链接。");
         return;
       }
-      const metadata = await actions.preview(original);
+      const metadata = await previewFlow.preview(original);
       if (live.current) {
-        setDraft((current) =>
-          current.url !== original
-            ? current
-            : {
-                ...current,
-                title:
-                  metadata.title && suggestedTitle.current
-                    ? metadata.title
-                    : current.title || metadata.title,
-                cover_url: current.cover_url || metadata.cover_url,
-              },
-        );
+        applyMetadata(original, metadata);
         setNotice(
           metadata.cover_url
             ? "读取完成，已补全可读取的信息。保存前请核对。"
@@ -134,6 +149,7 @@ export function BookmarkForm({
         );
       }
     } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
       if (live.current)
         setNotice(
           error instanceof Error
@@ -211,7 +227,7 @@ export function BookmarkForm({
             <select
               aria-label="选择要收藏的链接"
               value={draft.url}
-              onChange={(event) => set("url", event.target.value)}
+              onChange={(event) => { sourceVersion.current++; previewFlow.cancel(); set("url", event.target.value); }}
               required
             >
               <option value="">选择一个链接</option>
@@ -232,16 +248,37 @@ export function BookmarkForm({
         <button
           type="button"
           onClick={recognize}
-          disabled={previewing}
+          disabled={previewing || previewFlow.recovering}
           className="bookmark-button"
         >
           <WandSparkles size={15} />
           {previewing ? "识别中…" : "读取剪贴板并识别信息"}
         </button>
-        {notice && (
+        {(previewFlow.message || notice) && (
           <p role="status" className="bookmark-hint">
-            {notice}
+            {previewFlow.message || notice}
           </p>
+        )}
+        {previewFlow.problem && !previewFlow.recovering && (
+          previewFlow.problem.error.interaction?.mode === "remote" && previewFlow.problem.error.interaction.url ? (
+            <a className="bookmark-button" href={previewFlow.problem.error.interaction.url}
+              target="_blank" rel="noopener noreferrer" onClick={() => { void previewFlow.recover(); }}>
+              打开平台页面并继续读取
+            </a>
+          ) : (
+            <button type="button" className="bookmark-button" onClick={() => { void previewFlow.recover(); }}>
+              打开平台页面并继续读取
+            </button>
+          )
+        )}
+        {previewFlow.recovering && (
+          <div className="bookmark-form-actions">
+            {previewFlow.session?.interaction.url && (
+              <a className="bookmark-button" href={previewFlow.session.interaction.url}
+                target="_blank" rel="noopener noreferrer">打开登录页面</a>
+            )}
+            <button type="button" className="bookmark-button" onClick={previewFlow.cancel}>取消等待</button>
+          </div>
         )}
         <label>
           标题
