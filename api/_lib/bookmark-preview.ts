@@ -1,5 +1,12 @@
 import { parseBookmarkUrl } from "../../src/app/content/bookmarks.ts";
 import { douyinVideoPage } from "./douyin-render-policy.ts";
+import {
+  isXiaohongshuPage,
+  isXiaohongshuUrl,
+  parseXiaohongshuPreview,
+  requestXiaohongshuPage,
+  xiaohongshuNoteId,
+} from "./xiaohongshu-preview.ts";
 
 const PREVIEW_HOSTS = new Set([
   "bilibili.com",
@@ -28,8 +35,16 @@ export function allowedPreviewUrl(value: string): URL {
   const url = parseBookmarkUrl(value);
   if (url.protocol !== "https:" || url.port || !PREVIEW_HOSTS.has(url.hostname))
     throw new Error("这个链接暂不支持自动读取，请手动填写标题和封面。");
+  if (isXiaohongshuPage(url)) xiaohongshuNoteId(url);
   return url;
 }
+
+const fetchPreviewPage: typeof fetch = (input, options) => {
+  const url = new URL(input instanceof Request ? input.url : String(input));
+  return isXiaohongshuPage(url)
+    ? requestXiaohongshuPage(url, options!.signal!)
+    : fetch(input, options);
+};
 export function isPlaceholderCover(value: string): boolean {
   try {
     const url = new URL(value);
@@ -166,11 +181,13 @@ export function parsePreviewHtml(
 }
 export async function fetchBookmarkPreview(
   value: string,
-  fetcher: typeof fetch = fetch,
+  fetcher: typeof fetch = fetchPreviewPage,
   render: (url: string) => Promise<{ title: string; cover_url: string }> = async url =>
     (await import("./douyin-preview.ts")).renderDouyinPreview(url),
 ): Promise<{ title: string; cover_url: string }> {
   let url = allowedPreviewUrl(value);
+  const xiaohongshu = isXiaohongshuUrl(url);
+  let noteId = isXiaohongshuPage(url) ? xiaohongshuNoteId(url) : "";
   const signal = AbortSignal.timeout(6500);
   for (let step = 0; step <= 4; step++) {
     const response = await fetcher(url, {
@@ -178,8 +195,6 @@ export async function fetchBookmarkPreview(
       signal,
       headers: {
         Accept: "text/html",
-        // XHS serves only the platform logo to non-browser preview agents,
-        // while its public desktop HTML contains the note's signed images.
         "User-Agent": url.hostname === "mp.weixin.qq.com" ||
           url.hostname === "xiaohongshu.com" || url.hostname.endsWith(".xiaohongshu.com")
           ? "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
@@ -191,7 +206,16 @@ export async function fetchBookmarkPreview(
       const location = response.headers.get("location");
       if (!location || step === 4)
         throw new Error("短链接跳转过多，请粘贴原页面链接或手动填写。");
-      url = allowedPreviewUrl(new URL(location, url).href);
+      const destination = allowedPreviewUrl(new URL(location, url).href);
+      if (xiaohongshu && !isXiaohongshuUrl(destination))
+        throw new Error("小红书链接未返回笔记页面。");
+      if (isXiaohongshuPage(destination)) {
+        const destinationId = xiaohongshuNoteId(destination);
+        if (noteId && noteId !== destinationId)
+          throw new Error("小红书链接跳转到了其他笔记。");
+        noteId = destinationId;
+      }
+      url = destination;
       continue;
     }
     if (
@@ -201,10 +225,10 @@ export async function fetchBookmarkPreview(
       await response.body?.cancel();
       throw new Error("平台暂时无法读取，可以手动填写标题和封面后保存。");
     }
-    const preview = parsePreviewHtml(
-      await readHtmlHead(response, 512 * 1024),
-      url.href,
-    );
+    const html = await readHtmlHead(response, 512 * 1024);
+    if (isXiaohongshuPage(url)) return parseXiaohongshuPreview(html, url);
+    if (xiaohongshu) throw new Error("小红书链接未返回笔记页面。");
+    const preview = parsePreviewHtml(html, url.href);
     if ((!preview.title || !preview.cover_url) && douyinVideoPage(url.href)) {
       const rendered = await render(url.href);
       return {
