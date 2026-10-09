@@ -8,5 +8,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["api/**/*.ts", "services/bookmark-reader/**/*.ts"]
+  "include": ["api/**/*.ts"]
 }

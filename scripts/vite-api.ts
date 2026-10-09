@@ -12,8 +12,7 @@ export function localApi(): Plugin {
     configResolved(config) {
       const env = loadEnv(config.mode, config.envDir, "");
       for (const key of ["FEISHU_APP_ID", "FEISHU_APP_SECRET", "FEISHU_MEDIA_SIGNING_SECRET",
-        "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "BOOKMARK_CHROME_EXECUTABLE_PATH",
-        "BOOKMARK_BROWSER_READER_URL", "BOOKMARK_BROWSER_READER_TOKEN", "BOOKMARK_BROWSER_READER_PORT", "BOOKMARK_BROWSER_DATA_DIR"]) {
+        "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "BOOKMARK_CHROME_EXECUTABLE_PATH"]) {
         if (process.env[key] === undefined && env[key]) process.env[key] = env[key];
       }
     },

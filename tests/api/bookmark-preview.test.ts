@@ -111,8 +111,18 @@ test("follows approved short links and bounds content and redirect loops", async
     /跳转过多/,
   );
 });
-test("小红书短链接仅接受批准的域名", () => {
-  assert.equal(allowedPreviewUrl("https://xhslink.cn/o/isOHHGiso1").href, "https://xhslink.cn/o/isOHHGiso1");
+test("follows xhslink.cn while preserving signed destination parameters and redirect restrictions", async () => {
+  const destination = "https://www.xiaohongshu.com/discovery/item/abc?xsec_token=a%2Fb&xsec_source=app_share";
+  const visited: string[] = [];
+  const preview = await fetchBookmarkPreview("https://xhslink.cn/o/8plZFEty9Hb", (async (url) => {
+    visited.push(String(url));
+    return visited.length === 1
+      ? new Response(null, { status: 302, headers: { location: destination } })
+      : new Response('<title>父母爱情 - 小红书</title><meta property="og:image" content="https://sns-img.example/cover.jpg">', { headers: { "content-type": "text/html" } });
+  }) as typeof fetch);
+  assert.deepEqual(visited, ["https://xhslink.cn/o/8plZFEty9Hb", destination]);
+  assert.equal(preview.title, "父母爱情 - 小红书");
+  assert.equal(preview.cover_url, "https://sns-img.example/cover.jpg");
   assert.throws(() => allowedPreviewUrl("https://xhslink.cn.evil.example/o/test"));
   assert.throws(() => allowedPreviewUrl("https://arbitrary.xhslink.cn/o/test"));
 });
@@ -139,10 +149,11 @@ test("a Douyin share link renders the resolved video when the downloaded HTML ha
   assert.deepEqual(rendered, [destination]);
   assert.deepEqual(result, expected);
 });
-test("browser rendering is skipped for complete Douyin metadata", async () => {
+test("browser rendering is skipped for complete Douyin metadata and non-Douyin pages", async () => {
   const render = async () => { assert.fail("unnecessary browser launch"); };
   const fetcher = async () => new Response('<meta property="og:title" content="标题"><meta property="og:image" content="https://cdn.example/cover.jpg">', { headers: { "content-type": "text/html" } });
   await fetchBookmarkPreview("https://www.douyin.com/video/7681983811227372425", fetcher, render);
+  await fetchBookmarkPreview("https://www.xiaohongshu.com/explore/123", async () => new Response('<title>笔记</title>', { headers: { "content-type": "text/html" } }), render);
 });
 test("preview authenticates before any fetch, keeps replies private and gracefully fails", async () => {
   let calls = 0;
@@ -168,10 +179,16 @@ test("preview authenticates before any fetch, keeps replies private and graceful
   assert.equal((await result.json()).message, "请手动填写");
   assert.equal(calls, 1);
 });
-test("小红书默认图片不作为笔记封面", () => {
+test("XHS desktop metadata remains recoverable and its platform logo is never a cover", async () => {
   const logo = '<title>小红书</title><meta property="og:image" content="https://picasso-static.xiaohongshu.com/fe-platform/logo.png">';
   const page = "https://www.xiaohongshu.com/explore/note?xsec_token=original";
   assert.equal(parsePreviewHtml(logo, page).cover_url, "");
+  const preview = await fetchBookmarkPreview(page, async (_url, options) => {
+    const desktop = new Headers(options?.headers).get("User-Agent")?.includes("Mozilla/5.0");
+    return new Response(desktop ? logo + '<meta property="og:image" content="https://sns-webpic-qc.xhscdn.com/fresh/cover.jpg">' : logo,
+      { headers: { "Content-Type": "text/html" } });
+  });
+  assert.equal(preview.cover_url, "https://sns-webpic-qc.xhscdn.com/fresh/cover.jpg");
 });
 
 test("WeChat official account articles use desktop metadata for title and cover", async () => {
