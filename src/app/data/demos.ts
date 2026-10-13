@@ -7,7 +7,7 @@ export interface Demo {
   category: string;
   tags: string[];
   techStack: string[];
-  status: "live" | "wip" | "planned";
+  status: "live" | "wip" | "planned" | "terminated";
   colors: [string, string];
   icon: string;
   date: string;

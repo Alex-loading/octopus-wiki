@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useDemos } from "../content/useDemos";
+import { DEMO_STATUSES } from "../content/demos";
 import { motion, AnimatePresence } from "motion/react";
 import {
   FlaskConical,
@@ -24,21 +25,23 @@ interface LabProps {
 function StatusBadge({ status }: { status: Demo["status"] }) {
   const configs = {
     live: {
-      label: "运行中",
       dot: "bg-emerald-400",
       badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25",
       pulse: true,
     },
     wip: {
-      label: "开发中",
       dot: "bg-amber-400",
       badge: "bg-amber-500/15 text-amber-400 border-amber-500/25",
       pulse: false,
     },
     planned: {
-      label: "计划中",
       dot: "bg-gray-500",
       badge: "bg-gray-500/15 text-gray-400 border-gray-500/25",
+      pulse: false,
+    },
+    terminated: {
+      dot: "bg-rose-400",
+      badge: "bg-rose-500/15 text-rose-400 border-rose-500/25",
       pulse: false,
     },
   };
@@ -50,7 +53,7 @@ function StatusBadge({ status }: { status: Demo["status"] }) {
       <span
         className={`w-1.5 h-1.5 rounded-full ${c.dot} ${c.pulse ? "animate-pulse" : ""}`}
       />
-      {c.label}
+      {DEMO_STATUSES[status]}
     </span>
   );
 }
@@ -369,6 +372,7 @@ export function Lab({ darkMode }: LabProps) {
   const liveCount = demos.filter((d) => d.status === "live").length;
   const wipCount = demos.filter((d) => d.status === "wip").length;
   const plannedCount = demos.filter((d) => d.status === "planned").length;
+  const terminatedCount = demos.filter((d) => d.status === "terminated").length;
 
   return (
     <div className={`min-h-screen pt-24 pb-20 ${dm ? "bg-gray-950" : "bg-white"}`}>
@@ -414,18 +418,23 @@ export function Lab({ darkMode }: LabProps) {
             {[
               {
                 value: liveCount,
-                label: "运行中",
+                label: DEMO_STATUSES.live,
                 color: dm ? "text-emerald-400" : "text-emerald-600",
               },
               {
                 value: wipCount,
-                label: "开发中",
+                label: DEMO_STATUSES.wip,
                 color: dm ? "text-amber-400" : "text-amber-600",
               },
               {
                 value: plannedCount,
-                label: "计划中",
+                label: DEMO_STATUSES.planned,
                 color: dm ? "text-gray-500" : "text-gray-400",
+              },
+              {
+                value: terminatedCount,
+                label: DEMO_STATUSES.terminated,
+                color: dm ? "text-rose-400" : "text-rose-600",
               },
               {
                 value: demos.length,

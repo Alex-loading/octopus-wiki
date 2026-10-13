@@ -4,6 +4,7 @@ import { ArrowUpRight, BookOpen, Bookmark, FlaskConical, Coffee, X } from 'lucid
 import * as Dialog from '@radix-ui/react-dialog';
 import { listArticles } from '../../content/repository';
 import { useDemos } from '../../content/useDemos';
+import { DEMO_STATUSES } from '../../content/demos';
 import { useBookmarkLibrary } from '../../content/useBookmarkLibrary';
 import { PROFILE } from '../../data/profile';
 import type { Post } from '../../data/posts';
@@ -34,7 +35,7 @@ function Projects() {
   const { demos, loading, error, refresh } = useDemos();
   if (loading) return <Message>正在打开妙妙屋…</Message>;
   if (error) return <Message retry={refresh}>{error}</Message>;
-  return <><div className="room-content-list">{demos.map((d, i) => <Link to={`/lab?demo=${encodeURIComponent(d.slug)}`} className="room-content-row" key={d.id}><span className="room-row-index">{String(i + 1).padStart(2, '0')}</span><div><small>{d.category} · {d.status === 'live' ? '已上线' : d.status === 'wip' ? '制作中' : '计划中'}</small><h3>{d.title}</h3><p>{d.description}</p></div><ArrowUpRight size={19} /></Link>)}</div>{!demos.length && <Message>新的小实验正在酝酿中。</Message>}<Link to="/lab" className="room-all-link">进入妙妙屋 <ArrowUpRight size={15} /></Link></>;
+  return <><div className="room-content-list">{demos.map((d, i) => <Link to={`/lab?demo=${encodeURIComponent(d.slug)}`} className="room-content-row" key={d.id}><span className="room-row-index">{String(i + 1).padStart(2, '0')}</span><div><small>{d.category} · {DEMO_STATUSES[d.status]}</small><h3>{d.title}</h3><p>{d.description}</p></div><ArrowUpRight size={19} /></Link>)}</div>{!demos.length && <Message>新的小实验正在酝酿中。</Message>}<Link to="/lab" className="room-all-link">进入妙妙屋 <ArrowUpRight size={15} /></Link></>;
 }
 function Collections() {
   const { collections, bookmarks, loading, error, refresh } = useBookmarkLibrary();

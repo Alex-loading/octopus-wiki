@@ -64,7 +64,7 @@ type DemoRow = {
   category?: string | null;
   tags?: string[] | null;
   tech_stack?: string[] | null;
-  status?: "live" | "wip" | "planned" | null;
+  status?: Demo["status"] | null;
   colors?: [string, string] | null;
   icon?: string | null;
   date?: string | null;

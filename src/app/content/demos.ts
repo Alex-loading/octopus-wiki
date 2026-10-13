@@ -1,6 +1,11 @@
 import type { Demo } from "../data/demos";
 
-export const DEMO_STATUSES = { live: "运行中", wip: "开发中", planned: "计划中" } as const;
+export const DEMO_STATUSES = {
+  live: "运行中",
+  wip: "开发中",
+  planned: "计划中",
+  terminated: "已终止",
+} as const satisfies Record<Demo["status"], string>;
 export const DEMO_ICONS = [
   { value: "sparkles", label: "灵感星光", legacy: "✦" },
   { value: "wand-sparkles", label: "闪亮创意", legacy: "✧" },
