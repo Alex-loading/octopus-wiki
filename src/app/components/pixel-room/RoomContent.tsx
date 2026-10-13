@@ -26,7 +26,7 @@ function Articles() {
   const categories = ['全部', ...new Set(posts.map(p => p.category))];
   const filtered = posts.filter(p => category === '全部' || p.category === category);
   return <><div className="room-filters" aria-label="文章分类">{categories.map(c => <button key={c} aria-pressed={c === category} onClick={() => setCategory(c)}>{c}</button>)}</div>
-    <div className="room-content-list">{filtered.map((p, i) => <Link key={p.id} to={`/post/${encodeURIComponent(p.slug)}`} className="room-content-row"><span className="room-row-index">{String(i + 1).padStart(2, '0')}</span><div><small>{p.category} · {p.readTime} 分钟</small><h3>{p.title}</h3><p>{p.excerpt}</p></div><ArrowUpRight size={19} /></Link>)}</div>
+    <div className="room-content-list">{filtered.map((p, i) => <Link key={p.id} to={`/post/${encodeURIComponent(p.slug)}`} className="room-content-row"><span className="room-row-index">{String(i + 1).padStart(2, '0')}</span><div><small>{p.category}</small><h3 className="truncate">{p.title}</h3><time>{p.date}</time></div><ArrowUpRight size={19} /></Link>)}</div>
     {!filtered.length && <Message>这个书架还没有文章，稍后再来坐坐。</Message>}
     <Link className="room-all-link" to="/blog">查看全部文章 <ArrowUpRight size={15} /></Link></>;
 }

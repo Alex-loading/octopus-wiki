@@ -10,7 +10,6 @@ export interface Post {
   tags: string[];
   category: string;
   date: string;
-  readTime: number;
   likeCount?: number;
   featured?: boolean;
   status?: "draft" | "published";
@@ -29,7 +28,6 @@ export const posts: Post[] = [
     tags: ["效率", "思维", "生活方式"],
     category: "思考",
     date: "2026-03-15",
-    readTime: 8,
     featured: true,
     content: `
 ## 什么是深度工作？
@@ -79,7 +77,6 @@ export const posts: Post[] = [
     tags: ["AI", "开发", "工具"],
     category: "技术",
     date: "2026-03-10",
-    readTime: 12,
     featured: true,
     content: `
 ## AI 改变了什么？
@@ -137,7 +134,6 @@ AI 生成的代码不总是对的。它会自信地写出错误的代码，而�
     tags: ["设计", "美学", "思考"],
     category: "设计",
     date: "2026-03-05",
-    readTime: 6,
     content: `
 ## "Form follows function"
 
@@ -174,7 +170,6 @@ AI 生成的代码不总是对的。它会自信地写出错误的代码，而�
     tags: ["旅行", "生活方式", "哲学"],
     category: "生活",
     date: "2026-02-28",
-    readTime: 7,
     content: `
 ## 为什么我们旅行？
 
@@ -204,7 +199,6 @@ AI 生成的代码不总是对的。它会自信地写出错误的代码，而�
     tags: ["城市", "生活", "随笔"],
     category: "随笔",
     date: "2026-02-20",
-    readTime: 5,
     content: `
 ## 午夜的城市
 
@@ -238,7 +232,6 @@ AI 生成的代码不总是对的。它会自信地写出错误的代码，而�
     tags: ["阅读", "思维", "人文"],
     category: "思考",
     date: "2026-02-15",
-    readTime: 9,
     content: `
 ## 我们真的在"读"书吗？
 
@@ -279,7 +272,6 @@ AI 生成的代码不总是对的。它会自信地写出错误的代码，而�
     tags: ["设计", "心理学", "美学"],
     category: "设计",
     date: "2026-02-10",
-    readTime: 7,
     content: `
 ## 色彩的力量
 

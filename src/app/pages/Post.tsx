@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router";
 import { motion, AnimatePresence, useScroll, useSpring } from "motion/react";
 import {
   ArrowLeft,
-  Clock,
+  CalendarDays,
   Heart,
   Share2,
   MessageCircle,
@@ -61,44 +61,47 @@ function TableOfContents({
   if (headings.length === 0) return null;
 
   return (
-    <nav className="space-y-1">
+    <nav aria-label="文章目录" className="flex min-h-0 flex-col">
       <p
-        className={`text-xs font-medium mb-3 flex items-center gap-1.5 ${dm ? "text-gray-500" : "text-gray-400"
+        className={`shrink-0 text-xs font-medium mb-3 flex items-center gap-1.5 ${dm ? "text-gray-500" : "text-gray-400"
           }`}
       >
         <List size={12} />
         目录
       </p>
-      {headings.map((h) => (
-        <a
-          key={h.id}
-          href={`#${h.id}`}
-          onClick={(e) => {
-            e.preventDefault();
-            document.getElementById(h.id)?.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
-            });
-            onItemClick?.();
-          }}
-          className={`block text-xs leading-relaxed transition-all duration-200 ${h.level === 2 ? "pl-2" : h.level === 3 ? "pl-4" : ""
-            } ${activeId === h.id
-              ? dm
-                ? "text-indigo-400 font-medium"
-                : "text-indigo-600 font-medium"
-              : dm
-                ? "text-gray-600 hover:text-gray-300"
-                : "text-gray-400 hover:text-gray-700"
-            }`}
-        >
-          <span
-            className={`inline-block transition-all duration-200 ${activeId === h.id ? "translate-x-1" : ""
+      <div className="min-h-0 space-y-1 overflow-y-auto overscroll-contain pr-2">
+        {headings.map((h) => (
+          <a
+            key={h.id}
+            href={`#${h.id}`}
+            aria-current={activeId === h.id ? "location" : undefined}
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById(h.id)?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+              onItemClick?.();
+            }}
+            className={`block text-xs leading-relaxed transition-all duration-200 ${h.level === 2 ? "pl-2" : h.level === 3 ? "pl-4" : ""
+              } ${activeId === h.id
+                ? dm
+                  ? "text-indigo-400 font-medium"
+                  : "text-indigo-600 font-medium"
+                : dm
+                  ? "text-gray-600 hover:text-gray-300"
+                  : "text-gray-400 hover:text-gray-700"
               }`}
           >
-            {h.text}
-          </span>
-        </a>
-      ))}
+            <span
+              className={`inline-block transition-all duration-200 ${activeId === h.id ? "translate-x-1" : ""
+                }`}
+            >
+              {h.text}
+            </span>
+          </a>
+        ))}
+      </div>
     </nav>
   );
 }
@@ -371,6 +374,8 @@ export function Post({ darkMode }: PostProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowToc(!showToc)}
+            aria-expanded={showToc}
+            aria-controls="mobile-article-toc"
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm backdrop-blur-sm transition-colors ${showToc
               ? dm
                 ? "bg-indigo-500/20 border border-indigo-500/30 text-indigo-400"
@@ -390,11 +395,12 @@ export function Post({ darkMode }: PostProps) {
       <AnimatePresence>
         {showToc && headings.length > 0 && (
           <motion.div
+            id="mobile-article-toc"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className={`fixed top-[72px] right-6 z-40 xl:hidden w-52 rounded-xl border p-4 shadow-xl ${dm
+            className={`fixed top-32 right-6 z-40 xl:hidden flex max-h-[calc(100dvh-9rem)] w-52 flex-col rounded-xl border p-4 shadow-xl ${dm
               ? "bg-gray-900 border-white/10"
               : "bg-white border-gray-200 shadow-gray-200/50"
               }`}
@@ -483,11 +489,6 @@ export function Post({ darkMode }: PostProps) {
                         }`}
                     >
                       <span>{post.date}</span>
-                      <span>·</span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={10} />
-                        {post.readTime} 分钟阅读
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -634,18 +635,21 @@ export function Post({ darkMode }: PostProps) {
                         className="w-14 h-12 object-cover rounded-lg shrink-0"
                       />
                       <div className="flex-1 min-w-0">
+                        <span className={`mb-1 block text-xs ${dm ? "text-indigo-400" : "text-indigo-600"}`}>
+                          {rp.category}
+                        </span>
                         <p
                           className={`text-sm font-medium line-clamp-1 group-hover:text-indigo-500 transition-colors ${dm ? "text-white" : "text-gray-900"
                             }`}
                         >
                           {rp.title}
                         </p>
-                        <p
+                        <time
                           className={`text-xs mt-0.5 flex items-center gap-1 ${dm ? "text-gray-500" : "text-gray-400"
                             }`}
                         >
-                          <Clock size={10} /> {rp.readTime} 分钟
-                        </p>
+                          <CalendarDays size={10} /> {rp.date}
+                        </time>
                       </div>
                       <ChevronRight
                         size={14}
@@ -807,25 +811,15 @@ export function Post({ darkMode }: PostProps) {
               transition={{ delay: 0.5, duration: 0.5 }}
               className="hidden xl:block w-48 shrink-0"
             >
-              <div className="sticky top-28">
+              <div className="sticky top-28 flex max-h-[calc(100dvh-8rem)] flex-col">
                 <TableOfContents
                   headings={headings}
                   activeId={activeHeadingId}
                   dm={dm}
                 />
 
-                {/* Progress indicator */}
-                <div className="mt-8">
-                  <div
-                    className={`flex items-center justify-between text-xs mb-2 ${dm ? "text-gray-600" : "text-gray-400"
-                      }`}
-                  >
-                    <span className="flex items-center gap-1">
-                      <Clock size={10} />
-                      阅读时间
-                    </span>
-                    <span>{post.readTime} 分钟</span>
-                  </div>
+                {/* 阅读进度 */}
+                <div className="mt-8 shrink-0">
                   <div
                     className={`h-1 rounded-full overflow-hidden ${dm ? "bg-white/5" : "bg-gray-100"
                       }`}

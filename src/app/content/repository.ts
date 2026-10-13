@@ -36,7 +36,6 @@ type ArticleRow = {
   cover_image?: string | null;
   tags?: string[] | null;
   category?: string | null;
-  read_time?: number | null;
   like_count?: number | null;
   featured?: boolean | null;
   published_at?: string | null;
@@ -79,7 +78,7 @@ const DEFAULT_COVER =
   "https://images.unsplash.com/photo-1499750310107-5fef28a66643?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080";
 
 const ARTICLE_SELECT_FIELDS =
-  "id,slug,title,summary,content,content_md,cover_image,tags,category,read_time,like_count,featured,published_at,updated_at,status,deleted_at,feishu_doc_url,feishu_revision_id,feishu_synced_at,author_name,author_avatar";
+  "id,slug,title,summary,content,content_md,cover_image,tags,category,like_count,featured,published_at,updated_at,status,deleted_at,feishu_doc_url,feishu_revision_id,feishu_synced_at,author_name,author_avatar";
 
 const contentSource = (import.meta.env.VITE_CONTENT_SOURCE ?? "auto").toLowerCase();
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -107,13 +106,6 @@ type ArticleFeaturedUpdate = {
   featured: boolean;
 };
 
-function estimateReadTime(content: string): number {
-  const normalized = content.replace(/\s+/g, " ").trim();
-  if (!normalized) return 1;
-  const words = normalized.split(" ").length;
-  return Math.max(1, Math.ceil(words / 280));
-}
-
 function normalizeArticle(row: ArticleRow): Post {
   const content = row.content || row.content_md || "";
   const articleDate = row.published_at ?? row.updated_at ?? new Date().toISOString().slice(0, 10);
@@ -129,7 +121,6 @@ function normalizeArticle(row: ArticleRow): Post {
     tags: row.tags ?? [],
     category: row.category ?? "未分类",
     date: formatArticleDateTime(articleDate),
-    readTime: row.read_time ?? estimateReadTime(content),
     likeCount: Math.max(0, Number(row.like_count ?? 0)),
     featured: Boolean(row.featured),
     status: row.status === "draft" ? "draft" : "published",
@@ -528,7 +519,6 @@ function toArticleRowPayload(input: FeishuArticleWriteInput, userId: string | nu
     feishu_doc_url: input.feishuDocUrl.trim(),
     feishu_revision_id: input.feishuRevisionId?.trim() || null,
     feishu_synced_at: input.feishuSyncedAt?.trim() || null,
-    read_time: estimateReadTime(input.contentSnapshot),
     updated_at: now,
     updated_by: userId,
   };

@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { motion } from "motion/react";
-import { Clock, Heart, ArrowUpRight, Tag } from "lucide-react";
+import { CalendarDays, Heart, ArrowUpRight, Tag } from "lucide-react";
 import { Post } from "../data/posts";
 import { ArticleImage } from "./ArticleImage";
 
@@ -38,47 +38,27 @@ export function PostCard({ post, darkMode, index = 0, variant = "default" }: Pos
               transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <div className="absolute top-3 left-3">
-              <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full backdrop-blur-sm font-medium ${
-                dm ? "bg-indigo-500/80 text-white" : "bg-indigo-600 text-white"
-              }`}>
-                <Tag size={10} />
-                {post.category}
-              </span>
-            </div>
           </div>
           <div className="p-5">
-            <h2 className={`text-lg leading-snug mb-2 group-hover:text-indigo-500 transition-colors line-clamp-2 ${dm ? "text-white" : "text-gray-900"}`}>
+            <span className={`mb-1.5 flex items-center gap-1 text-xs font-medium ${dm ? "text-indigo-400" : "text-indigo-600"}`}>
+              <Tag size={10} />
+              {post.category}
+            </span>
+            <h2 className={`text-lg leading-snug mb-2 group-hover:text-indigo-500 transition-colors line-clamp-1 ${dm ? "text-white" : "text-gray-900"}`}>
               {post.title}
             </h2>
-            <p className={`text-sm leading-relaxed line-clamp-2 mb-4 ${dm ? "text-gray-400" : "text-gray-500"}`}>
-              {post.excerpt}
-            </p>
-            <div className="flex items-center gap-3">
-              <span className={`text-xs flex items-center gap-1.5 ${dm ? "text-gray-500" : "text-gray-400"}`}>
-                <Clock size={12} />
-                {post.readTime} 分钟阅读
+            <div className="flex items-center justify-between gap-3">
+              <time className={`text-xs flex items-center gap-1.5 ${dm ? "text-gray-500" : "text-gray-400"}`}>
+                <CalendarDays size={12} />
+                {post.date}
+              </time>
+              <span className={`flex items-center gap-1 text-xs ${dm ? "text-gray-500" : "text-gray-400"}`}>
+                <Heart size={12} />
+                {post.likeCount ?? 0}
               </span>
-              <span className={`text-xs ${dm ? "text-gray-600" : "text-gray-300"}`}>·</span>
-              <span className={`text-xs ${dm ? "text-gray-500" : "text-gray-400"}`}>{post.date}</span>
             </div>
           </div>
         </Link>
-
-        {/* Actions */}
-        <div className={`px-5 pb-4 flex items-center justify-between border-t ${dm ? "border-white/5" : "border-gray-50"} pt-3`}>
-          <div className="flex items-center gap-1">
-            {post.tags.slice(0, 2).map((tag) => (
-              <span key={tag} className={`text-xs px-2 py-0.5 rounded-full ${dm ? "bg-white/5 text-gray-400" : "bg-gray-50 text-gray-500"}`}>
-                {tag}
-              </span>
-            ))}
-          </div>
-          <div className={`flex items-center gap-1 text-xs px-2 py-1 ${dm ? "text-gray-500" : "text-gray-400"}`}>
-            <Heart size={12} />
-            <span>{post.likeCount ?? 0}</span>
-          </div>
-        </div>
       </motion.article>
     );
   }
@@ -94,7 +74,7 @@ export function PostCard({ post, darkMode, index = 0, variant = "default" }: Pos
           dm ? "hover:bg-white/5" : "hover:bg-gray-50"
         }`}
       >
-        <Link to={`/post/${post.slug}`} className="flex items-start gap-4 flex-1">
+        <Link to={`/post/${post.slug}`} className="flex min-w-0 items-start gap-4 flex-1">
           <ArticleImage
             src={post.coverImage}
             alt={post.title}
@@ -105,34 +85,34 @@ export function PostCard({ post, darkMode, index = 0, variant = "default" }: Pos
           />
           <div className="flex-1 min-w-0">
             <span className={`text-xs mb-1 block ${dm ? "text-indigo-400" : "text-indigo-600"}`}>{post.category}</span>
-            <h3 className={`text-sm font-medium leading-snug line-clamp-2 group-hover:text-indigo-500 transition-colors ${dm ? "text-white" : "text-gray-900"}`}>
+            <h3 className={`text-sm font-medium leading-snug line-clamp-1 group-hover:text-indigo-500 transition-colors ${dm ? "text-white" : "text-gray-900"}`}>
               {post.title}
             </h3>
-            <span className={`text-xs mt-1 flex items-center gap-1 ${dm ? "text-gray-500" : "text-gray-400"}`}>
-              <Clock size={10} />
-              {post.readTime} 分钟
-            </span>
+            <time className={`text-xs mt-1 flex items-center gap-1 ${dm ? "text-gray-500" : "text-gray-400"}`}>
+              <CalendarDays size={10} />
+              {post.date}
+            </time>
           </div>
         </Link>
       </motion.article>
     );
   }
 
-  // Default variant
+  // 默认列表样式
   return (
     <motion.article
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      className={`group flex gap-5 p-5 rounded-2xl border transition-all ${
+      className={`group flex gap-3 p-4 sm:gap-5 sm:p-5 rounded-2xl border transition-all ${
         dm
           ? "border-white/5 hover:border-white/10 hover:bg-white/2 bg-gray-900/50"
           : "border-gray-100 hover:border-gray-200 hover:bg-gray-50/50 bg-white"
       }`}
     >
-      <Link to={`/post/${post.slug}`} className="flex gap-5 flex-1 min-w-0">
-        <div className="relative overflow-hidden rounded-xl shrink-0 w-28 h-24">
+      <Link to={`/post/${post.slug}`} className="flex gap-2 sm:gap-5 flex-1 min-w-0">
+        <div className="relative overflow-hidden rounded-xl shrink-0 w-16 h-16 sm:w-28 sm:h-24">
           <MotionArticleImage
             src={post.coverImage}
             alt={post.title}
@@ -144,33 +124,19 @@ export function PostCard({ post, darkMode, index = 0, variant = "default" }: Pos
             transition={{ duration: 0.5 }}
           />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
           <div className="flex items-center gap-2 mb-1.5">
             <span className={`text-xs font-medium ${dm ? "text-indigo-400" : "text-indigo-600"}`}>
               {post.category}
             </span>
-            <span className={`text-xs ${dm ? "text-gray-600" : "text-gray-300"}`}>·</span>
-            <span className={`text-xs ${dm ? "text-gray-500" : "text-gray-400"}`}>{post.date}</span>
           </div>
           <h3 className={`text-base font-medium leading-snug mb-1.5 line-clamp-1 group-hover:text-indigo-500 transition-colors ${dm ? "text-white" : "text-gray-900"}`}>
             {post.title}
           </h3>
-          <p className={`text-sm line-clamp-2 leading-relaxed ${dm ? "text-gray-400" : "text-gray-500"}`}>
-            {post.excerpt}
-          </p>
-          <div className="flex items-center gap-3 mt-2">
-            <span className={`text-xs flex items-center gap-1 ${dm ? "text-gray-500" : "text-gray-400"}`}>
-              <Clock size={11} />
-              {post.readTime} 分钟
-            </span>
-            <div className="flex gap-1">
-              {post.tags.slice(0, 2).map((tag) => (
-                <span key={tag} className={`text-xs px-1.5 py-0.5 rounded-md ${dm ? "bg-white/5 text-gray-500" : "bg-gray-100 text-gray-400"}`}>
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
+          <time className={`text-xs flex items-center gap-1 whitespace-nowrap ${dm ? "text-gray-500" : "text-gray-400"}`}>
+            <CalendarDays size={11} className="shrink-0" />
+            {post.date}
+          </time>
         </div>
       </Link>
 

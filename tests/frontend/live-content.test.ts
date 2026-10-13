@@ -17,7 +17,6 @@ const post: Post = {
   tags: [],
   category: "Test",
   date: "2026-08-28",
-  readTime: 1,
   feishuDocUrl: "https://tenant.feishu.cn/docx/DocToken123",
 };
 

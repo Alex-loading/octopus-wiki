@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, X, ArrowRight, Clock, Tag } from "lucide-react";
+import { Search, X, ArrowRight, CalendarDays, Tag } from "lucide-react";
 import { listArticles } from "../content/repository";
 import type { Post } from "../data/posts";
 
@@ -146,19 +146,17 @@ export function SearchModal({ open, onClose, darkMode }: SearchModalProps) {
                         className="w-12 h-10 object-cover rounded-lg shrink-0 mt-0.5"
                       />
                       <div className="flex-1 min-w-0">
+                        <span className={`mb-1 flex items-center gap-1 text-xs ${dm ? "text-gray-500" : "text-gray-400"}`}>
+                          <Tag size={10} />
+                          {post.category}
+                        </span>
                         <p className={`text-sm font-medium truncate ${dm ? "text-white" : "text-gray-900"}`}>
                           {post.title}
                         </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-xs flex items-center gap-1 ${dm ? "text-gray-500" : "text-gray-400"}`}>
-                            <Tag size={10} />
-                            {post.category}
-                          </span>
-                          <span className={`text-xs flex items-center gap-1 ${dm ? "text-gray-500" : "text-gray-400"}`}>
-                            <Clock size={10} />
-                            {post.readTime} 分钟
-                          </span>
-                        </div>
+                        <time className={`mt-1 flex items-center gap-1 text-xs ${dm ? "text-gray-500" : "text-gray-400"}`}>
+                          <CalendarDays size={10} />
+                          {post.date}
+                        </time>
                       </div>
                       <ArrowRight
                         size={14}
