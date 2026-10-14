@@ -357,6 +357,7 @@ export function Lab({ darkMode }: LabProps) {
   const { demos, loading, error, refresh } = useDemos();
   const demoCategories = useMemo(() => ["全部", ...new Set(demos.map(demo => demo.category).filter(category => category !== "全部"))], [demos]);
   const [selectedCategory, setSelectedCategory] = useState("全部");
+  const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedDemo, setSelectedDemo] = useState<Demo | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedDemo = searchParams.get("demo");
@@ -364,15 +365,24 @@ export function Lab({ darkMode }: LabProps) {
     if (requestedDemo) setSelectedDemo(demos.find(demo => demo.slug === requestedDemo) ?? null);
   }, [requestedDemo, demos]);
 
-  const filtered = useMemo(() => {
-    if (selectedCategory === "全部") return demos;
-    return demos.filter((d) => d.category === selectedCategory);
-  }, [selectedCategory, demos]);
+  const filtered = useMemo(() => demos.filter(demo =>
+    (selectedCategory === "全部" || demo.category === selectedCategory)
+    && (selectedStatus === "all" || demo.status === selectedStatus)
+  ), [selectedCategory, selectedStatus, demos]);
 
   const liveCount = demos.filter((d) => d.status === "live").length;
   const wipCount = demos.filter((d) => d.status === "wip").length;
   const plannedCount = demos.filter((d) => d.status === "planned").length;
   const terminatedCount = demos.filter((d) => d.status === "terminated").length;
+  const filterButtonClassName = (active: boolean) => `px-4 py-2 rounded-full text-sm transition-all ${
+    active
+      ? dm
+        ? "bg-white text-gray-900"
+        : "bg-gray-900 text-white"
+      : dm
+        ? "text-gray-500 hover:text-gray-300 border border-white/5 hover:border-white/10"
+        : "text-gray-500 hover:text-gray-800 border border-gray-200 hover:border-gray-300"
+  }`;
 
   return (
     <div className={`min-h-screen pt-24 pb-20 ${dm ? "bg-gray-950" : "bg-white"}`}>
@@ -458,50 +468,61 @@ export function Lab({ darkMode }: LabProps) {
           </motion.div>
         </motion.div>
 
-        {/* Category filter */}
+        {/* 项目筛选 */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="flex items-center gap-2 flex-wrap mb-8"
+          className="space-y-3 mb-8"
         >
-          {demoCategories.map((cat) => (
-            <motion.button
-              key={cat}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-full text-sm transition-all ${
-                selectedCategory === cat
-                  ? dm
-                    ? "bg-white text-gray-900"
-                    : "bg-gray-900 text-white"
-                  : dm
-                  ? "text-gray-500 hover:text-gray-300 border border-white/5 hover:border-white/10"
-                  : "text-gray-500 hover:text-gray-800 border border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              {cat}
-              {cat !== "全部" && (
-                <span
-                  className={`ml-1.5 text-xs ${
-                    selectedCategory === cat
-                      ? dm
-                        ? "text-gray-500"
+          <div role="group" aria-label="按项目分类筛选" className="flex items-center gap-2 flex-wrap">
+            {demoCategories.map((cat) => (
+              <motion.button
+                key={cat}
+                type="button"
+                aria-pressed={selectedCategory === cat}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSelectedCategory(cat)}
+                className={filterButtonClassName(selectedCategory === cat)}
+              >
+                {cat}
+                {cat !== "全部" && (
+                  <span
+                    className={`ml-1.5 text-xs ${
+                      selectedCategory === cat
+                        ? dm
+                          ? "text-gray-500"
+                          : "text-gray-400"
+                        : dm
+                        ? "text-gray-600"
                         : "text-gray-400"
-                      : dm
-                      ? "text-gray-600"
-                      : "text-gray-400"
-                  }`}
-                >
-                  {demos.filter((d) => d.category === cat).length}
-                </span>
-              )}
-            </motion.button>
-          ))}
+                    }`}
+                  >
+                    {demos.filter((d) => d.category === cat).length}
+                  </span>
+                )}
+              </motion.button>
+            ))}
+          </div>
 
-          {/* Hint */}
+          <div role="group" aria-label="按项目状态筛选" className="flex items-center gap-2 flex-wrap">
+            {[["all", "全部状态"], ...Object.entries(DEMO_STATUSES)].map(([status, label]) => (
+              <motion.button
+                key={status}
+                type="button"
+                aria-pressed={selectedStatus === status}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSelectedStatus(status)}
+                className={filterButtonClassName(selectedStatus === status)}
+              >
+                {label}
+              </motion.button>
+            ))}
+          </div>
+
           <span
-            className={`ml-auto text-xs flex items-center gap-1.5 ${
+            role="status"
+            className={`text-xs flex items-center justify-end gap-1.5 ${
               dm ? "text-gray-600" : "text-gray-400"
             }`}
           >
@@ -520,15 +541,15 @@ export function Lab({ darkMode }: LabProps) {
         ) : filtered.length === 0 ? (
           <div className={`py-16 text-center ${dm ? "text-gray-400" : "text-gray-500"}`}>
             <Sparkles className="mx-auto mb-3" size={28} />
-            <p>{demos.length ? "这个分类下还没有项目" : "妙妙屋正在布置中"}</p>
-            <p className="mt-2 text-sm">有趣的作品会陆续放进来。</p>
+            <p>{demos.length ? "没有符合筛选条件的项目" : "妙妙屋正在布置中"}</p>
+            <p className="mt-2 text-sm">{demos.length ? "试试其他分类或项目状态。" : "有趣的作品会陆续放进来。"}</p>
           </div>
         ) : null}
 
         {/* Demo grid */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={selectedCategory}
+            key={JSON.stringify([selectedCategory, selectedStatus])}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
