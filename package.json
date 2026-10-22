@@ -13,6 +13,7 @@
     "test": "tsx --test tests/**/*.test.ts",
     "test:api": "tsx --test tests/api/*.test.ts",
     "test:bookmark-preview:live": "tsx --test tests/integration/xiaohongshu-preview.integration.ts",
+    "test:douyin-preview:live": "tsx --test tests/integration/douyin-preview.integration.ts",
     "covers:backfill": "tsx scripts/bookmarks/archive-covers.ts",
     "db:init": "bash ./scripts/db/init-db.sh",
     "db:verify": "bash ./scripts/db/init-db.sh && bash ./scripts/db/init-db.sh",

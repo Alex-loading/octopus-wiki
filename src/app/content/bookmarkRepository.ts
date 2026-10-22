@@ -1,4 +1,5 @@
 import { getSupabaseClient, getUserRoleState } from "./repository";
+import { BOOKMARK_PREVIEW_TIMEOUTS } from "./bookmarkPreviewTimeouts";
 import {
   validateBookmarkDraft,
   validateCollectionDraft,
@@ -156,7 +157,7 @@ export async function previewBookmark(
       Authorization: `Bearer ${data.session.access_token}`,
     },
     body: JSON.stringify({ url }),
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(BOOKMARK_PREVIEW_TIMEOUTS.request),
   });
   const result = await response.json().catch(() => null);
   if (!response.ok || !result?.success)

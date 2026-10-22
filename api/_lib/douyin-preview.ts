@@ -1,4 +1,5 @@
 import { tmpdir } from "node:os";
+import { BOOKMARK_PREVIEW_TIMEOUTS } from "../../src/app/content/bookmarkPreviewTimeouts.ts";
 import { parsePreviewHtml } from "./bookmark-preview.ts";
 import { allowedDouyinResource, douyinVideoPage } from "./douyin-render-policy.ts";
 import type { Browser } from "puppeteer-core";
@@ -23,8 +24,8 @@ export async function renderDouyinPreview(value: string): Promise<{ title: strin
       executablePath,
       headless: localPath ? true : "shell",
       args: chromium?.args ?? [],
-      timeout: 12000,
-      protocolTimeout: 25000,
+      timeout: BOOKMARK_PREVIEW_TIMEOUTS.browserLaunch,
+      protocolTimeout: BOOKMARK_PREVIEW_TIMEOUTS.browserProtocol,
       defaultViewport: { width: 1280, height: 720 },
       // The browser has no access to the server's Supabase/Feishu credentials.
       env: {
@@ -34,9 +35,9 @@ export async function renderDouyinPreview(value: string): Promise<{ title: strin
         ...(process.env.FONTCONFIG_PATH ? { FONTCONFIG_PATH: process.env.FONTCONFIG_PATH } : {}),
       },
     });
-    timeout = setTimeout(() => browser?.process()?.kill("SIGKILL"), 30000);
+    timeout = setTimeout(() => browser?.process()?.kill("SIGKILL"), BOOKMARK_PREVIEW_TIMEOUTS.browserRender);
     const page = await browser.newPage();
-    page.setDefaultTimeout(22000);
+    page.setDefaultTimeout(BOOKMARK_PREVIEW_TIMEOUTS.browserMetadata);
     await page.setBypassServiceWorker(true);
     await page.setRequestInterception(true);
     page.on("request", request => {
@@ -46,7 +47,7 @@ export async function renderDouyinPreview(value: string): Promise<{ title: strin
         ? request.continue() : request.abort();
       void action.catch(() => {});
     });
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15000 });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: BOOKMARK_PREVIEW_TIMEOUTS.browserNavigation });
     await page.waitForFunction(`Boolean(document.querySelector('meta[name="lark:url:video_title"]')?.content && document.querySelector('meta[name="lark:url:video_cover_image_url"]')?.content)`);
     const meta = await page.evaluate(`Array.from(document.head.querySelectorAll('meta[name="lark:url:video_title"],meta[name="lark:url:video_cover_image_url"]')).map(node => node.outerHTML).join('')`) as string;
     if (meta.length > 16000) throw new Error("Video metadata exceeded limit");
@@ -59,7 +60,7 @@ export async function renderDouyinPreview(value: string): Promise<{ title: strin
   } finally {
     if (timeout) clearTimeout(timeout);
     if (browser) {
-      const forceClose = setTimeout(() => browser?.process()?.kill("SIGKILL"), 2000);
+      const forceClose = setTimeout(() => browser?.process()?.kill("SIGKILL"), BOOKMARK_PREVIEW_TIMEOUTS.browserClose);
       await browser.close().catch(() => {});
       clearTimeout(forceClose);
     }

@@ -1,4 +1,5 @@
 import { parseBookmarkUrl } from "../../src/app/content/bookmarks.ts";
+import { BOOKMARK_PREVIEW_TIMEOUTS } from "../../src/app/content/bookmarkPreviewTimeouts.ts";
 import { douyinVideoPage } from "./douyin-render-policy.ts";
 import {
   isXiaohongshuPage,
@@ -188,7 +189,7 @@ export async function fetchBookmarkPreview(
   let url = allowedPreviewUrl(value);
   const xiaohongshu = isXiaohongshuUrl(url);
   let noteId = isXiaohongshuPage(url) ? xiaohongshuNoteId(url) : "";
-  const signal = AbortSignal.timeout(6500);
+  const signal = AbortSignal.timeout(BOOKMARK_PREVIEW_TIMEOUTS.http);
   for (let step = 0; step <= 4; step++) {
     const response = await fetcher(url, {
       redirect: "manual",
