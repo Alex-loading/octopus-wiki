@@ -1,4 +1,3 @@
-import { StorageApiError } from "@supabase/supabase-js";
 import { getSupabaseClient } from "./repository";
 import { PHOTO_PAGE_SIZE, photoPaths, type PhotoEntry, type photoEntryValues } from "./photos";
 import type { PreparedPhoto } from "./preparePhoto";
@@ -40,7 +39,7 @@ export async function uploadPhoto(entryId: string, image: PreparedPhoto) {
   for (const variant of ["thumbnail", "full"] as const) {
     const { error } = await bucket.upload(paths[variant], image[variant], { contentType: "image/jpeg", cacheControl: "0" });
     // 同一张待保存照片使用固定路径，重试时保留已成功上传的文件。
-    if (error && !(error instanceof StorageApiError && ["409", "Duplicate", "ResourceAlreadyExists"].includes(error.statusCode ?? ""))) {
+    if (error && !["409", "Duplicate", "KeyAlreadyExists", "ResourceAlreadyExists"].includes(error.statusCode ?? "")) {
       throw error;
     }
   }
