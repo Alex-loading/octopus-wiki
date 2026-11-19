@@ -14,7 +14,9 @@ import { Collections } from "./pages/Collections";
 import { Collect } from "./pages/Collect";
 import { AdminDemos } from "./pages/AdminDemos";
 import { AdminBookmarks } from "./pages/AdminBookmarks";
+import { AdminPhotos } from "./pages/AdminPhotos";
 import { CollectorSetup } from "./pages/CollectorSetup";
+import { Photos } from "./pages/Photos";
 import { useBlog } from "./context/BlogContext";
 
 const PixelRoom = lazy(() => import("./pages/PixelRoom"));
@@ -26,6 +28,7 @@ function PageContent({ path }: { path: string }) {
   if (path.startsWith("/post/")) return <Post darkMode={darkMode} />;
   if (path === "/about") return <About darkMode={darkMode} />;
   if (path === "/lab") return <Lab darkMode={darkMode} />;
+  if (path === "/photos" || path === "/photos/") return <Photos darkMode={darkMode} />;
   if (path === "/admin/login") return <AdminLogin darkMode={darkMode} />;
   if (path === "/admin/articles") return <AdminArticles darkMode={darkMode} />;
   if (path === "/collections" || /^\/collections\/[^/]+$/.test(path)) return <Collections darkMode={darkMode} />;
@@ -33,6 +36,7 @@ function PageContent({ path }: { path: string }) {
   if (path === "/collect/setup") return <CollectorSetup darkMode={darkMode} />;
   if (path === "/admin/demos") return <AdminDemos darkMode={darkMode} />;
   if (path === "/admin/bookmarks") return <AdminBookmarks darkMode={darkMode} />;
+  if (path === "/admin/photos") return <AdminPhotos darkMode={darkMode} />;
   return (
     <div className={`min-h-screen flex items-center justify-center pt-24 ${darkMode ? "bg-gray-950 text-white" : "bg-white text-gray-900"}`}>
       <div className="text-center">

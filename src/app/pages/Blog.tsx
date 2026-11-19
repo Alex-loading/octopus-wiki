@@ -1,9 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, SlidersHorizontal, X, LayoutGrid, List } from "lucide-react";
+import { BookOpen, Search, SlidersHorizontal, X, LayoutGrid, List } from "lucide-react";
 import { listArticles } from "../content/repository";
 import type { Post } from "../data/posts";
 import { PostCard } from "../components/PostCard";
+import { PageIntro, PageSection } from "../components/PageSection";
 
 interface BlogProps {
   darkMode: boolean;
@@ -71,25 +72,9 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
   const hasFilters = searchQuery || selectedCategory || selectedTags.length > 0;
 
   return (
-    <div className={`min-h-screen pt-24 pb-20 ${dm ? "bg-gray-950" : "bg-white"}`}>
-      <div className="max-w-5xl mx-auto px-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-12"
-        >
-          <p className={`text-sm font-medium mb-2 ${dm ? "text-indigo-400" : "text-indigo-600"}`}>
-            全部文章
-          </p>
-          <h1 className={`text-4xl font-light tracking-tight ${dm ? "text-white" : "text-gray-900"}`}>
-            文章列表
-          </h1>
-          <p className={`mt-3 ${dm ? "text-gray-400" : "text-gray-500"}`}>
-            共 {posts.length} 篇文章
-          </p>
-        </motion.div>
+    <PageSection darkMode={dm}>
+        <PageIntro darkMode={dm} icon={BookOpen} label="阅读与思考" title="文章列表"
+          description={<>记录技术学习和项目实践。{!loading && <> 共 {posts.length} 篇文章。</>}</>} />
 
         {/* Search & filter bar */}
         <motion.div
@@ -298,7 +283,6 @@ export function Blog({ darkMode, onSearchOpen }: BlogProps) {
             )}
           </AnimatePresence>
         )}
-      </div>
-    </div>
+    </PageSection>
   );
 }

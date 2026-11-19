@@ -40,7 +40,7 @@ export function BookmarkLayout({
   children: ReactNode;
 }) {
   return (
-    <main className="bookmark-page" data-theme={darkMode ? "dark" : "light"}>
+    <main className="bookmark-page bookmark-page-layout" data-theme={darkMode ? "dark" : "light"}>
       <div className="bookmark-shell">{children}</div>
     </main>
   );

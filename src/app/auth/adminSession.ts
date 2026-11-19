@@ -20,7 +20,7 @@ export function safeAdminReturnPath(value?: string | null): string {
   if (!value?.startsWith("/") || value.startsWith("//") || /[\\\u0000-\u0020]/.test(value)) return fallback;
   try {
     const url = new URL(value, "https://wiki.invalid");
-    const knownPage = ["/", "/blog", "/lab", "/about", "/admin/articles", "/admin/bookmarks", "/admin/demos", "/collections", "/collect", "/collect/setup"].includes(url.pathname);
+    const knownPage = ["/", "/blog", "/lab", "/about", "/photos", "/photos/", "/admin/articles", "/admin/bookmarks", "/admin/demos", "/admin/photos", "/collections", "/collect", "/collect/setup"].includes(url.pathname);
     if (url.origin !== "https://wiki.invalid" || (!knownPage && !/^\/(post|collections)\/[^/]+$/.test(url.pathname))) return fallback;
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {

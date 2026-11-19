@@ -41,6 +41,12 @@
 
   部署前应用 `database/migrations/009_wonder_room.sql`。前台列表、分类和首页项目数量均读取真实公开记录；无数据展示空状态，读取失败可重试。参见 [妙妙屋使用与验证](docs/plans/2026-09-08-wonder-room.md)。
 
+  ## 日常照片
+
+  `/photos` 按记录时间倒序展示首图、配文和时间。登录管理员账号后，前往 `/admin/photos` 多选或拖入照片、调整顺序，并选择公开或仅管理员可见。照片会在浏览器中生成 JPEG 缩略图和大图，再上传到 Supabase Storage。
+
+  部署前在 Supabase 应用 `database/migrations/013_photo_entries.sql`。照片使用现有的 Supabase 项目和管理员权限。访客只能读取设为公开的记录及对应照片。
+
   ## Cross-platform bookmark library
 
   Public bookmarks live at `/collections`; administrators use `/collect` to save links and

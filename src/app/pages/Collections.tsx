@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router";
 import {
   ArrowLeft,
   ArrowUpRight,
+  Bookmark,
   FolderOpen,
   Plus,
   Search,
@@ -10,8 +11,8 @@ import {
 import {
   BookmarkCard,
   BookmarkEmpty,
-  BookmarkLayout,
 } from "../components/BookmarkUI";
+import { PageIntro, PageSection } from "../components/PageSection";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import { useBookmarkLibrary } from "../content/useBookmarkLibrary";
 import { PLATFORMS } from "../content/bookmarks";
@@ -48,32 +49,24 @@ export function Collections({ darkMode }: { darkMode: boolean }) {
     return counts;
   }, [library.bookmarks]);
   return (
-    <BookmarkLayout darkMode={darkMode}>
+    <PageSection darkMode={darkMode} className="bookmark-page">
       {collectionId && (
         <Link to="/collections" className="bookmark-back">
           <ArrowLeft size={15} /> 全部收藏箱
         </Link>
       )}
-      <header className="bookmark-heading">
-        <div>
-          <p className="bookmark-eyebrow">OCTOPUS / COLLECTIONS</p>
-          <h1>
-            {collectionId
-              ? collection?.name || "收藏箱"
-              : "把值得回看的，收在这里。"}
-          </h1>
-          <p>
-            {collectionId
-              ? collection?.description
-              : "散落在不同平台的灵感、知识与好内容。按主题整理，随时回到原处。"}
-          </p>
-        </div>
-        {auth.isAdmin && (
+      <PageIntro
+        darkMode={darkMode}
+        icon={Bookmark}
+        label="收集与整理"
+        title={collectionId ? collection?.name || "收藏箱" : "收藏"}
+        description={collectionId ? collection?.description : "把值得回看的，收在这里。"}
+        action={auth.isAdmin && (
           <Link to="/collect" className="bookmark-button primary">
             <Plus size={16} /> 添加收藏
           </Link>
         )}
-      </header>
+      />
       {library.loading ? (
         <p role="status" className="bookmark-status">
           正在打开收藏箱…
@@ -191,6 +184,6 @@ export function Collections({ darkMode }: { darkMode: boolean }) {
           <Link to="/collect/setup">设置快捷收藏</Link>
         </footer>
       )}
-    </BookmarkLayout>
+    </PageSection>
   );
 }

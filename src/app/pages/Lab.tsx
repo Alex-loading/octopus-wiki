@@ -17,6 +17,7 @@ import {
 import type { Demo } from "../data/demos";
 import { PROFILE } from "../data/profile";
 import { DemoIcon } from "../components/DemoIcon";
+import { PageIntro, PageSection } from "../components/PageSection";
 
 interface LabProps {
   darkMode: boolean;
@@ -385,39 +386,9 @@ export function Lab({ darkMode }: LabProps) {
   }`;
 
   return (
-    <div className={`min-h-screen pt-24 pb-20 ${dm ? "bg-gray-950" : "bg-white"}`}>
-      <div className="max-w-5xl mx-auto px-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-12"
-        >
-          <div
-            className={`flex items-center gap-2 text-sm font-medium mb-3 ${
-              dm ? "text-indigo-400" : "text-indigo-600"
-            }`}
-          >
-            <motion.div
-              animate={{ rotate: [0, 15, -15, 0] }}
-              transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
-            >
-              <FlaskConical size={15} />
-            </motion.div>
-            灵感与创造
-          </div>
-          <h1
-            className={`text-4xl font-light tracking-tight mb-3 ${
-              dm ? "text-white" : "text-gray-900"
-            }`}
-          >
-            妙妙屋
-          </h1>
-          <p className={`${dm ? "text-gray-400" : "text-gray-500"}`}>
-            收纳灵感、动手创造，这里放着我做的有趣项目。
-          </p>
-
+    <PageSection darkMode={dm}>
+        <PageIntro darkMode={dm} icon={FlaskConical} label="灵感与创造" title="妙妙屋"
+          description="收纳灵感、动手创造，这里放着我做的有趣项目。">
           {/* Stats */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -466,7 +437,7 @@ export function Lab({ darkMode }: LabProps) {
               </div>
             ))}
           </motion.div>
-        </motion.div>
+        </PageIntro>
 
         {/* 项目筛选 */}
         <motion.div
@@ -603,21 +574,20 @@ export function Lab({ darkMode }: LabProps) {
             发邮件给我
           </a>
         </motion.div>
-      </div>
 
-      {/* Demo modal */}
-      <AnimatePresence>
-        {selectedDemo && (
-          <DemoModal
-            demo={selectedDemo}
-            dm={dm}
-            onClose={() => {
-              setSelectedDemo(null);
-              if (requestedDemo) setSearchParams(params => { params.delete("demo"); return params; }, { replace: true });
-            }}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+        {/* Demo modal */}
+        <AnimatePresence>
+          {selectedDemo && (
+            <DemoModal
+              demo={selectedDemo}
+              dm={dm}
+              onClose={() => {
+                setSelectedDemo(null);
+                if (requestedDemo) setSearchParams(params => { params.delete("demo"); return params; }, { replace: true });
+              }}
+            />
+          )}
+        </AnimatePresence>
+    </PageSection>
   );
 }

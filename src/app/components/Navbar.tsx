@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { Moon, Sun, Search, Menu, X, FilePenLine, FlaskConical, Bookmark } from "lucide-react";
+import { Moon, Sun, Search, Menu, X, FilePenLine, FlaskConical, Bookmark, Images } from "lucide-react";
 import { OctopusAvatar } from "./OctopusAvatar";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import { createAdminLoginGesture, safeAdminReturnPath } from "../auth/adminSession";
@@ -54,12 +54,14 @@ export function Navbar({ darkMode, toggleDarkMode, onSearchOpen }: NavbarProps) 
   const navLinks: Array<{ href: string; label: string; icon?: typeof FlaskConical }> = [
     { href: "/", label: "首页" },
     { href: "/blog", label: "文章" },
+    { href: "/photos", label: "日常" },
     { href: "/collections", label: "收藏", icon: Bookmark },
     { href: "/lab", label: "妙妙屋", icon: FlaskConical },
     { href: "/about", label: "关于" },
   ];
   if (isAdmin) navLinks.push({ href: "/admin/articles", label: "文章管理", icon: FilePenLine });
   if (isAdmin) navLinks.push({ href: "/admin/bookmarks", label: "收藏管理", icon: Bookmark });
+  if (isAdmin) navLinks.push({ href: "/admin/photos", label: "照片管理", icon: Images });
   if (isAdmin) navLinks.push({ href: "/admin/demos", label: "妙妙屋管理", icon: FlaskConical });
 
   const isActive = (href: string) => {
